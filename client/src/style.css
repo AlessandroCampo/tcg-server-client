@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+img {
+    display: block;
+}
+
+#app {
+    overflow: hidden;
+}
