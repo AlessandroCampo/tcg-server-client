@@ -6,6 +6,7 @@ import PlayerArea from './components/game/PlayerArea.vue';
 import { useMultiplayer } from './composables/useMultiplayer';
 import { useGameController } from './stores/gameController';
 import { storeToRefs } from 'pinia';
+import QueueButton from './components/misc/QueueButton.vue';
 
 const { isWaiting } = useMultiplayer();
 const store = useGameController();
@@ -24,9 +25,7 @@ const { myPlayer, opponentPlayer, isMyTurn } = storeToRefs(store);
     <!-- Ally side -->
     <PlayerArea :my-player="myPlayer" :enemy-player="opponentPlayer" :is-enemy="false" />
   </div>
-  <div v-else>
-    <h2>Waiting for opponent....</h2>
-  </div>
+
 </template>
 
 

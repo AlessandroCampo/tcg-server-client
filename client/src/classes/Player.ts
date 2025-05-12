@@ -16,6 +16,7 @@ export class Player {
     hand: Card[];
     deck: Card[];
     grave: Card[];
+    originalCards: Card[];
     lifePoints: number;
     mana: number;
     isActiveTurn: boolean;
@@ -29,6 +30,7 @@ export class Player {
         this.board = [];
         this.hand = [];
         this.grave = [];
+        this.originalCards = [];
         this.lifePoints = 10;
         this.mana = 0;
         this.isActiveTurn = false;
@@ -42,6 +44,7 @@ export class Player {
             const newCard = new Card({ ...c });
             return newCard;
         })];
+        player.originalCards = player.deck;
         player.hand = [...state.hand.map(c => {
             const newCard = new Card({ ...c });
             return newCard;
@@ -53,10 +56,10 @@ export class Player {
     }
 
     updateFromState(state: PlayerState) {
-        this.deck = state.deck.map(c => new Card({ ...c }));
+        this.deck = state.deck.map(c => new Card({ ...c, }));
         this.hand = state.hand.map(c => new Card({ ...c }));
         this.grave = state.graveyard.map(c => new Card({ ...c }));
-        this.board = state.board.map(c => new Card({ ...c }));
+        this.board = state.board.map(c => new Card({ ...c, }));
         this.lifePoints = state.lifePoints;
         this.mana = state.mana;
     }
@@ -86,29 +89,6 @@ export class Player {
         gc.minionAttack(attackinMinionId, defendingMinionId);
 
     }
-
-    /* 
-
-  initRandomDeck(): void {
-        this.deck = [];
-        const { minions } = useGameController();
-
-        if (!minions) return;
-
-        while (this.deck.length < gameRules.MAX_DECK_SIZE) {
-            const randomCard = minions[Math.floor(Math.random() * minions.length)];
-            const newCard = Card.cloneFrom(randomCard, {
-                isPlayerControlled: this.isMyPlayer,
-                isFoil: true,
-            });
-            this.deck.push(newCard);
-        }
-    }
-
-      
-    }
-
-    */
 
 
 

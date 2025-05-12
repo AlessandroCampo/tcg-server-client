@@ -32,22 +32,22 @@
 
 
             <!-- Mana Cost -->
-            <div class="stat cost">
+            <div class="stat cost" :class="getCostClass">
               {{ card.cost }}
             </div>
 
             <!-- Attack -->
-            <div class="stat atk">
+            <div class="stat atk" :class="getAttackClass">
               {{ card.attack }}
             </div>
 
             <!-- Defense -->
-            <div class="stat def">
+            <div class="stat def" :class="getDefenseClass">
               {{ card.defense }}
             </div>
 
             <p class="text">
-              {{ card.isHorizontal }}
+              {{ card.originalAttack }}
               {{ card.effectText }}
             </p>
           </template>
@@ -74,7 +74,7 @@
 <script setup lang="ts">
 import { cn } from '@/lib/utils';
 import { useTimeoutFn } from '@vueuse/core';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Card } from '@shared/Card';
 import cardback from '@/assets/images/cards/card-back.png';
 import minionTemplate from '@/assets/images/cards/card-template.png';
@@ -103,6 +103,30 @@ const state = ref({
   background: { x: 50, y: 50 },
   rotate: { x: 0, y: 0 },
 });
+
+const getCostClass = computed(() => {
+  return {
+    'text-green-500': props.card.cost > props.card.originalCost,
+    'text-red-500': props.card.cost < props.card.originalCost,
+    'text-white': props.card.cost === props.card.originalCost
+  };
+})
+const getAttackClass = computed(() => {
+  if (!props.card.attack || !props.card.originalAttack) return '';
+  return {
+    'text-green-500': props.card.attack > props.card.originalAttack,
+    'text-red-500': props.card.attack < props.card.originalAttack,
+    'text-white': props.card.attack === props.card.originalAttack
+  };
+})
+const getDefenseClass = computed(() => {
+  if (!props.card.defense || !props.card.originalDefense) return '';
+  return {
+    'text-green-500': props.card.defense > props.card.originalDefense,
+    'text-red-500': props.card.defense < props.card.originalDefense,
+    'text-white': props.card.defense === props.card.originalDefense
+  };
+})
 
 function handlePointerMove(event: PointerEvent) {
   if (props.isEnemy) return;

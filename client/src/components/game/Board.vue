@@ -1,15 +1,18 @@
 <template>
     <div class="board" :class="isEnemy && 'mb-3'">
         <div v-for="(card, i) in player.board" :key="'field-card-' + i" class="board-card-wrapper"
-            @dblclick="card.isHorizontal = true"> <!-- Handle Change positon -->
+            @dblclick="handleDoubleClick(card)"> <!-- Handle Change positon -->
             <!-- NEW WRAPPER: drag wrapper -->
             <div class="drag-wrapper" :data-id="card.instanceId" :class="[
                 isEnemy ? 'enemy-board-card' : 'my-board-card',
-                !isEnemy && card.isActive ? 'draggable' : ''
+                !isEnemy && card.isActive ? 'draggable' : '',
+
 
             ]" @dragstart.prevent>
-                <div class="board-card" :class="[card.isHorizontal ? 'horizontal' : 'vertical']"
-                    @dbclick="card.isHorizontal = true">
+                <div class="board-card" :class="[card.isHorizontal ? 'horizontal' : 'vertical',
+                card.isActive ? 'active' : 'inactive'
+
+                ]">
                     <GlareCard :card="card" :show-back="false" :is-enemy="isEnemy" />
                 </div>
             </div>
@@ -28,11 +31,15 @@
 // Import Vue functions, composables, components, types, etc.
 
 import { Player } from '@/classes/Player';
+import { Card } from '@shared/Card';
 
 import GlareCard from '../ui/glare-card/GlareCard.vue';
 import { onMounted } from 'vue';
 import interact from 'interactjs';
 import { useGameController } from '@/stores/gameController';
+import { validator } from '@shared/validations';
+import { EventType } from '@shared/interfaces';
+import { setupDraggable } from '@/composables/useDraggable';
 
 const gameController = useGameController();
 
@@ -117,59 +124,49 @@ onMounted(() => {
         }
     });
 
-    interact('.drag-wrapper.draggable').draggable({
-        listeners: {
-            start(event) {
-                if (isEnemy) return;
-                const target = event.target as HTMLElement;
+    setupDraggable('.drag-wrapper.draggable');
 
-                // Save initial position on the element
-                if (!target.dataset.startX || !target.dataset.startY) {
-                    target.dataset.startX = '0';
-                    target.dataset.startY = '0';
-                }
 
-                // Reset position on drag start
-                target.dataset.x = target.dataset.startX;
-                target.dataset.y = target.dataset.startY;
-            },
+    interact('.my-board-card').dropzone({
+        accept: '.my.mana.active',
+        overlap: 0.75,
 
-            move(event) {
-                const target = event.target as HTMLElement;
+        ondropactivate(event) {
+            event.target.classList.add('drop-active');
+        },
 
-                const x = (parseFloat(target.dataset.x!) || 0) + event.dx;
-                const y = (parseFloat(target.dataset.y!) || 0) + event.dy;
+        ondragenter(event) {
+            event.target.classList.add('drop-target');
+        },
 
-                target.style.transform = `translate(${x}px, ${y}px)`;
-                target.dataset.x = x.toString();
-                target.dataset.y = y.toString();
-            },
+        ondragleave(event) {
+            event.target.classList.remove('drop-target');
+        },
 
-            end(event) {
-                const target = event.target as HTMLElement;
-                const dropped = event.relatedTarget;
-                console.log(event);
+        ondrop(event) {
+            if (!isEnemy) return;
 
-                if (target.dataset.dropped === 'true') {
-                    // Don't reset position, just remove the flag for next drag
-                    delete target.dataset.dropped;
-                    return;
-                }
+            const dropTarget = event.target;
 
-                // Otherwise, reset to hand
-                target.style.transition = 'transform 0.2s ease';
-                target.style.transform = `translate(0px, 0px)`;
-                target.dataset.x = '0';
-                target.dataset.y = '0';
+            if (dropTarget) {
 
-                setTimeout(() => {
-                    target.style.transition = '';
-                }, 200);
+                const targetElementId = dropTarget.dataset.id;
+                gameController.manaBoost(targetElementId);
+
             }
+        },
 
+        ondropdeactivate(event) {
+            event.target.classList.remove('drop-active');
+            event.target.classList.remove('drop-target');
         }
     });
 })
+
+const handleDoubleClick = (card: Card) => {
+    if (isEnemy) return;
+    gameController.changePosition(card.instanceId);
+}
 
 
 
@@ -272,7 +269,7 @@ onMounted(() => {
 }
 
 .board-card.inactive {
-    opacity: 0.8;
+
     filter: grayscale(100%) contrast(75%);
 }
 

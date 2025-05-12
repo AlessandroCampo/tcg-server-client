@@ -10,7 +10,10 @@
                 <LeaderHealthCircle :value="myPlayer.lifePoints" :is-enemy="true" :enemy-player="enemyPlayer" />
             </div>
             <div class="flex gap-2">
-                <ManaIcon v-for="n in gameRules.MAX_MANA" :key="n" :is-active="n <= myPlayer.mana" />
+
+                <ManaIcon v-for="n in gameRules.MAX_MANA" :key="n" :is-active="n <= myPlayer.mana" :class="[isEnemy ? 'enemy' : 'my',
+                n <= myPlayer.mana ? 'active' : ''
+                ]" class="mana" />
             </div>
             <div v-if="!isEnemy">
                 <LeaderHealthCircle :value="myPlayer.lifePoints" :is-enemy="false" :enemy-player="enemyPlayer" />
@@ -46,6 +49,8 @@ import { gameRules } from '@shared/gameRules';
 import { Player } from '@/classes/Player';
 import { onMounted } from 'vue';
 
+import { setupDraggable } from '@/composables/useDraggable';
+
 const props = defineProps({
     myPlayer: Player,
     enemyPlayer: Player,
@@ -53,8 +58,8 @@ const props = defineProps({
 });
 
 onMounted(() => {
-    console.log(props);
-})
+    setupDraggable('.my.mana.active');
+});
 
 </script>
 

@@ -4,13 +4,15 @@ import { Card } from '@shared/Card';
 import { useSocket } from './useSocket';
 import { store } from '@/stores/testStore';
 import { CardPlayedEvent, EventType, GameEvent, GameState } from '@shared/interfaces';
+import { myRouter } from '@/router';
+
 
 const { socket } = useSocket();
 
 const room = ref<string | null>(null);
 const myPlayerId = ref<string | null>(null);
 const opponentPlayerId = ref<string | null>(null);
-const isWaiting = ref(true);
+const isWaiting = ref(false);
 import { useGameController } from '@/stores/gameController';
 
 interface BasePayload {
@@ -32,7 +34,6 @@ export const useMultiplayer = () => {
         socket.on('waiting', (data) => {
             isWaiting.value = true;
             myPlayerId.value = data.playerId;
-            console.log('waiting', data, data.playerId);
         });
 
         socket.on('connected', (data) => {
@@ -42,12 +43,20 @@ export const useMultiplayer = () => {
         socket.on('game-start', (data) => {
             room.value = data.room;
             isWaiting.value = false;
-            console.log('game-data', data);
             console.log("Game started on room: " + data.room);
             opponentPlayerId.value = Object.keys(data.gameState.players).find(id => id !== myPlayerId.value)!;
-            console.log(opponentPlayerId.value);
             gameController.startGame(data.gameState);
+            myRouter.push('game');
         });
+
+        socket.on('game-over', (data) => {
+            room.value = null;
+            console.log(data, 'game-over', myPlayerId.value);
+
+            const outcome = data.winnerId == myPlayerId.value ? 'winner' : 'loser';
+            console.log(outcome);
+            return myRouter.push({ name: 'game-over', params: { outcome } });
+        })
 
         socket.on('game-event', ({ event, state }: { event: GameEvent, state: GameState }) => {
 
@@ -73,8 +82,6 @@ export const useMultiplayer = () => {
                         // hand.push(event.card)
                         break;
 
-
-                    // …etc
                 }
             }
 

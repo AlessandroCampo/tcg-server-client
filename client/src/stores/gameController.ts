@@ -3,9 +3,11 @@ import { defineStore } from 'pinia'
 import { ref, computed, shallowRef } from 'vue'
 import { Player } from '@/classes/Player'
 import { Card } from '@/classes/Card'
-import { GameState, PlayerState } from 'shared/interfaces'
+import { GameState, PlayerState, EventType } from 'shared/interfaces'
 import { useMultiplayer } from '@/composables/useMultiplayer'
 import { useSocket } from '@/composables/useSocket';
+import { useRouter } from 'vue-router';
+const router = useRouter();
 
 
 export const useGameController = defineStore('game', () => {
@@ -49,6 +51,7 @@ export const useGameController = defineStore('game', () => {
         opponentPlayer.value.opponent = myPlayer.value;
 
 
+
     }
 
     const playCard = (cardId: string) => {
@@ -66,6 +69,17 @@ export const useGameController = defineStore('game', () => {
     function passTurn() {
         emitEvent('end-turn');
     }
+
+    function changePosition(cardId: string) {
+        emitEvent(
+            'change-position', { cardId });
+    }
+    function manaBoost(cardId: string) {
+        emitEvent(
+            'mana-boost', { cardId });
+    }
+
+
 
     const setGameState = (state: GameState) => {
         gameState.value = state;
@@ -98,7 +112,9 @@ export const useGameController = defineStore('game', () => {
         playCard,
         setGameState,
         directAttack,
-        minionAttack
+        minionAttack,
+        changePosition,
+        manaBoost
 
     }
 })
