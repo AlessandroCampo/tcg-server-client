@@ -31,8 +31,12 @@ export async function fetchDeckData(
             name: dbCard.name,
             image_url: `${process.env.BASE_URL}/uploads/${dbCard.id}.jpg`,
             attack: dbCard.attack,
+            originalAttack: dbCard.attack,
+
             defense: dbCard.defense,
+            originalDefense: dbCard.defense,
             cost: dbCard.cost,
+            originalCost: dbCard.cost,
             color: dbCard.color as any,
             type: dbCard.type as any,
             subtype: dbCard.subtype as any,

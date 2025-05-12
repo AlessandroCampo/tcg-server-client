@@ -27,6 +27,9 @@ export function sanitizeGameStateFor(
                 attack: 0,
                 defense: 0,
                 cost: 0,
+                originalAttack: 0,
+                originalCost: 0,
+                originalDefense: 0,
 
                 // you could also use a special “hidden” enum value
                 color: 'HIDDEN' as any,

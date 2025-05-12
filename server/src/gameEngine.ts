@@ -9,7 +9,9 @@ import {
     EventFailure,
     DirectAttackPayload,
     MinionAttackPayload,
-    PlayerState
+    PlayerState,
+    ChangePositionPayload,
+    ManaBoostPayload
 } from '../../shared/interfaces';
 import { gameRules } from '../../shared/gameRules';
 import { Card } from '../../shared/Card';
@@ -27,6 +29,7 @@ export function draw(
     p.hand.push(...p.deck.splice(0, drawCount));
     return { success: true, state: st };
 }
+
 
 /**
  * Attempt to play a card. Fails if not your turn, no such card, or insufficient mana.
@@ -58,6 +61,7 @@ export function playCard(
     p.board.push(card);
     p.mana -= card.cost;
 
+    console.log('card-played');
     return { success: true, state: st, card: card };
 }
 
@@ -124,8 +128,12 @@ export function directAttack(
 
     const damage = card.attack ?? 0;
     opponent.lifePoints = Math.max(opponent.lifePoints - damage, 0);
+
     card.isActive = false;
     card.isHorizontal = true;
+    if (opponent.lifePoints == 0) {
+
+    }
     //player.board[idx] = card;
 
     return {
@@ -183,8 +191,66 @@ export function minionAttack(state: GameState, payload: MinionAttackPayload): Ev
 
 }
 
+export function changePosition(
+    state: GameState,
+    payload: ChangePositionPayload
+): EventResult<{ state: GameState }> {
 
-const getPlayersFromState = (st: GameState, playerId: string): PlayerState[] => {
+    const { cardId, playerId } = payload;
+    const st = structuredClone(state);
+    const [player, opponent] = getPlayersFromState(st, playerId);
+    const card = player.board.find(c => c.instanceId == cardId);
+    if (!card) {
+        return { success: false, reason: 'Card not found on the board' };
+    }
+    if (card.isActive) {
+        return { success: false, reason: 'You can only switch the position of inactive units' };
+    }
+    if (card.isHorizontal) {
+        return { success: false, reason: 'Your minion is already defending...' };
+    }
+
+    card.isHorizontal = true;
+    return {
+        success: true,
+        state: st,
+    };
+}
+export function manaBoost(
+    state: GameState,
+    payload: ManaBoostPayload
+): EventResult<{ state: GameState }> {
+
+    const { cardId, playerId } = payload;
+    const st = structuredClone(state);
+    const [player] = getPlayersFromState(st, playerId);
+    const card = player.board.find(c => c.instanceId == cardId);
+    if (!card) {
+        return { success: false, reason: 'Card not found on the board' };
+    }
+    if (player.mana == 0) {
+        return { success: false, reason: "You don't have enough mana!" };
+    }
+
+    if (!card.attack || !card.defense) {
+        return { success: false, reason: "You can only boost units.." };
+    }
+    if (!card.isActive || card.isHorizontal) {
+        return { success: false, reason: "You should only boost units that are ready to attack..." };
+    }
+
+    card.attack += 1;
+    card.defense += 1;
+    player.mana -= 1;
+
+    return {
+        success: true,
+        state: st,
+    };
+}
+
+
+export const getPlayersFromState = (st: GameState, playerId: string): PlayerState[] => {
     const player = st.players[playerId];
     const opponentId = Object.keys(st.players).find(id => id !== playerId);
     if (!opponentId) throw new Error;

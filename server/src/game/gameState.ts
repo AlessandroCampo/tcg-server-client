@@ -7,7 +7,9 @@ import {
     DrawPayload,
     PlayCardPayload,
     DirectAttackPayload,
-    MinionAttackPayload
+    MinionAttackPayload,
+    ChangePositionPayload,
+    ManaBoostPayload
 } from '../../../shared/interfaces';
 import {
     draw,
@@ -15,6 +17,8 @@ import {
     passTurn,
     directAttack,
     minionAttack,
+    changePosition,
+    manaBoost
 
 } from '../gameEngine';
 import { Card } from '@shared/Card';
@@ -60,6 +64,14 @@ export class GameSession {
     applyMinionAttack(payload: MinionAttackPayload) {
         return applyEngine(this, minionAttack, payload);
     }
+
+    applyChangePosition(payload: ChangePositionPayload) {
+        return applyEngine(this, changePosition, payload);
+    }
+
+    applyManaBoost(payload: ManaBoostPayload) {
+        return applyEngine(this, manaBoost, payload);
+    }
 }
 
 
@@ -70,5 +82,6 @@ export function createSession(room: string, initial: GameState) {
 }
 
 export function getSession(room: string): GameSession | undefined {
+    console.log(sessions);
     return sessions.get(room);
 }

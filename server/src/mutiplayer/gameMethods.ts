@@ -7,8 +7,13 @@ import {
     PlayCardPayload,
     PassTurnPayload,
     DirectAttackPayload,
-    DrawPayload
+    DrawPayload,
+    BasePayload,
+    MinionAttackPayload,
+    ChangePositionPayload,
+    ManaBoostPayload
 } from '../../../shared/interfaces';
+import { getPlayersFromState } from '../gameEngine';
 
 /**
  * Only the keys of GameSession that map to handler methods
@@ -31,6 +36,9 @@ function broadcastEvent(
     extra: Record<string, any> = {}
 ) {
     for (const viewerId of Object.keys(state.players)) {
+
+
+
         io.to(viewerId).emit('game-event', {
             state: sanitizeGameStateFor(viewerId, state),
             event: {
@@ -39,6 +47,14 @@ function broadcastEvent(
                 ...extra
             }
         });
+
+        const [player, opponent] = getPlayersFromState(state, viewerId);
+        if (opponent.lifePoints == 0) {
+            console.log('game-over');
+            io.to(room).emit('game-over', {
+                winnerId: viewerId
+            })
+        }
     }
 }
 
@@ -58,15 +74,19 @@ function registerHandler<
     extractExtra?: (res: Extract<R, { success: true }>) => Record<string, any>
 ) {
     socket.on(message, (payload: Payload) => {
-        console.log(`➡️ ${message} from ${socket.id}`, payload);
+        console.log(`➡️ ${message} from ${socket.id}`);
         const session = getSession(payload.room);
+        console.log(session, payload.room);
         if (!session) return;
 
         const result = (session[methodName] as (p: any) => R)(payload);
+        console.log(result);
         if (!result.success) {
             console.warn(`${message} failed:`, (result as any).reason);
             return;
         }
+
+
 
         const extra = extractExtra ? extractExtra(result as Extract<R, { success: true }>) : {};
         broadcastEvent(io, payload.room, eventType, payload.playerId, session.state, extra);
@@ -112,11 +132,25 @@ export function initGameMethods(socket: Socket, io: Server) {
         EventType.CARD_DRAWN
     );
 
-    registerHandler<DrawPayload, 'applyMinionAttack', ReturnType<GameSession['applyMinionAttack']>>(
+    registerHandler<MinionAttackPayload, 'applyMinionAttack', ReturnType<GameSession['applyMinionAttack']>>(
         socket,
         io,
         'minion-attack',
         'applyMinionAttack',
         EventType.CARD_DRAWN
+    );
+    registerHandler<ChangePositionPayload, 'applyChangePosition', ReturnType<GameSession['applyChangePosition']>>(
+        socket,
+        io,
+        'change-position',
+        'applyChangePosition',
+        EventType.CARD_DRAWN
+    );
+    registerHandler<ManaBoostPayload, 'applyManaBoost', ReturnType<GameSession['applyManaBoost']>>(
+        socket,
+        io,
+        'mana-boost',
+        'applyManaBoost',
+        EventType.MANA_BOOST
     );
 }
