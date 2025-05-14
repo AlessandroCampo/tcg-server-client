@@ -1,19 +1,19 @@
 <template>
-    <div class="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div class="max-w-2xl mx-auto p-6 bg-gray-700 rounded-lg shadow-md">
         <h2 class="text-2xl font-semibold text-center mb-6">Create a New Card</h2>
 
         <form @submit.prevent="submitForm">
             <!-- Card Name -->
 
             <div class="mb-4">
-                <label for="name" class="block text-sm font-medium text-gray-700">Card Name</label>
+                <label for="name" class="block text-sm font-medium text-white">Card Name</label>
                 <input id="name" v-model="form.name" type="text" placeholder="Enter card name" required
                     class="mt-1 px-3 py-2 border border-gray-300 rounded-md w-full" />
             </div>
 
             <!-- Card Type -->
             <div class="mb-4">
-                <label for="type" class="block text-sm font-medium text-gray-700">Card Type</label>
+                <label for="type" class="block text-sm font-medium text-white">Card Type</label>
                 <select v-model="form.type" id="type" class="mt-1 px-3 py-2 border border-gray-300 rounded-md w-full">
                     <option value="MINION">Minion</option>
                     <option value="SPELL">Spell</option>
@@ -23,7 +23,7 @@
 
             <!-- Card Color -->
             <div class="mb-4">
-                <label for="color" class="block text-sm font-medium text-gray-700">Card Color</label>
+                <label for="color" class="block text-sm font-medium text-white">Card Color</label>
                 <select v-model="form.color" id="color" class="mt-1 px-3 py-2 border border-gray-300 rounded-md w-full">
                     <option value="WHITE">White</option>
                     <option value="RED">Red</option>
@@ -37,7 +37,7 @@
 
             <!-- Card Subtype -->
             <div class="mb-4" v-show="form.type != 'MINION'">
-                <label for="subtype" class="block text-sm font-medium text-gray-700">Subtype (optional)</label>
+                <label for="subtype" class="block text-sm font-medium text-white">Subtype (optional)</label>
                 <select v-model="form.subtype" id="subtype"
                     class="mt-1 px-3 py-2 border border-gray-300 rounded-md w-full">
                     <option value="">None</option>
@@ -49,7 +49,7 @@
 
             <!-- Card Cost -->
             <div class="mb-4">
-                <label for="cost" class="block text-sm font-medium text-gray-700">Cost</label>
+                <label for="cost" class="block text-sm font-medium text-white">Cost</label>
                 <input id="cost" v-model="form.cost" type="number" placeholder="Enter card cost" required
                     class="mt-1 px-3 py-2 border border-gray-300 rounded-md w-full" />
             </div>
@@ -57,7 +57,7 @@
 
             <div v-show="form.type == 'MINION'">
                 <div class="mb-4">
-                    <label for="attack" class="block text-sm font-medium text-gray-700">Attack</label>
+                    <label for="attack" class="block text-sm font-medium text-white">Attack</label>
                     <input id="attack" v-model="form.attack" type="number" placeholder="Enter attack points"
                         :disabled="form.type !== 'MINION'"
                         class="mt-1 px-3 py-2 border border-gray-300 rounded-md w-full" />
@@ -65,7 +65,7 @@
 
                 <!-- Card Defense -->
                 <div class="mb-4">
-                    <label for="defense" class="block text-sm font-medium text-gray-700">Defense</label>
+                    <label for="defense" class="block text-sm font-medium text-white">Defense</label>
                     <input id="defense" v-model="form.defense" type="number" placeholder="Enter defense points"
                         :disabled="form.type !== 'MINION'"
                         class="mt-1 px-3 py-2 border border-gray-300 rounded-md w-full" />
@@ -78,7 +78,7 @@
 
             <!-- Image URL -->
             <div class="mb-4">
-                <label for="image" class="block text-sm font-medium text-gray-700">Card Image (JPG)</label>
+                <label for="image" class="block text-sm font-medium text-white">Card Image (JPG)</label>
                 <input id="image" ref="fileInput" type="file" accept="image/jpeg" @change="onFileChange" required
                     class="mt-1 w-full" />
                 <p v-if="fileError" class="text-red-500 text-sm mt-1">{{ fileError }}</p>
@@ -86,7 +86,7 @@
 
             <!-- Rarity (select dropdown) -->
             <div class="mb-4">
-                <label for="rarity" class="block text-sm font-medium text-gray-700">Rarity</label>
+                <label for="rarity" class="block text-sm font-medium text-white">Rarity</label>
                 <select v-model="form.rarity" id="rarity"
                     class="mt-1 px-3 py-2 border border-gray-300 rounded-md w-full">
                     <option value="COMMON">Common</option>
@@ -100,14 +100,14 @@
             <!-- Choose or Create Effects -->
             <!-- Effect Name -->
             <div class="mb-4">
-                <label for="effectName" class="block text-sm font-medium text-gray-700">Effect Name</label>
+                <label for="effectName" class="block text-sm font-medium text-white">Effect Name</label>
                 <input id="effectName" v-model="form.effectName" type="text" placeholder="Optional effect name"
                     class="mt-1 px-3 py-2 border border-gray-300 rounded-md w-full" />
             </div>
 
             <!-- Effect Text -->
             <div class="mb-4">
-                <label for="cardText" class="block text-sm font-medium text-gray-700">Card Text</label>
+                <label for="cardText" class="block text-sm font-medium text-white">Card Text</label>
                 <textarea id="cardText" v-model="form.effectText" placeholder="Card effect or description" rows="4"
                     class="mt-1 px-3 py-2 border border-gray-300 rounded-md w-full"></textarea>
             </div>
@@ -115,7 +115,7 @@
 
             <!-- Choose or Create Keywords -->
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700">Keywords</label>
+                <label class="block text-sm font-medium text-white">Keywords</label>
                 <div class="flex flex-col space-y-2">
                     <div v-for="keyword in keywords" :key="keyword.id" class="flex items-center">
                         <input type="checkbox" :id="`keyword-${keyword.id}`" v-model="form.keywordIds"
@@ -141,7 +141,7 @@
                 <h3 class="text-lg font-semibold mb-4">Create a New Keyword</h3>
 
                 <div class="mb-4">
-                    <label for="keywordName" class="block text-sm font-medium text-gray-700">Keyword Name</label>
+                    <label for="keywordName" class="block text-sm font-medium text-white">Keyword Name</label>
                     <input id="keywordName" v-model="newKeyword.name" type="text" placeholder="Enter keyword name"
                         class="mt-1 px-3 py-2 border border-gray-300 rounded-md w-full" />
                 </div>
@@ -167,9 +167,9 @@ import axios from 'axios'
 axios.defaults.headers.common['ngrok-skip-browser-warning'] = 'true';
 import { BACKEND_URL } from '@/composables/useSocket';
 
-const URL = 'https://d075-79-18-224-70.ngrok-free.app'
+//const URL = 'https://d075-79-18-224-70.ngrok-free.app'
 
-//const URL = BACKEND_URL;
+const URL = BACKEND_URL;
 
 
 

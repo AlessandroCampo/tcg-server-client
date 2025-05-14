@@ -47,7 +47,6 @@
             </div>
 
             <p class="text">
-              {{ card.originalAttack }}
               {{ card.effectText }}
             </p>
           </template>

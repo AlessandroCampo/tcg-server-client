@@ -11,7 +11,8 @@ import {
     BasePayload,
     MinionAttackPayload,
     ChangePositionPayload,
-    ManaBoostPayload
+    ManaBoostPayload,
+    TargetSelectionPayload
 } from '../../../shared/interfaces';
 import { getPlayersFromState } from '../gameEngine';
 
@@ -75,20 +76,30 @@ function registerHandler<
 ) {
     socket.on(message, (payload: Payload) => {
         console.log(`➡️ ${message} from ${socket.id}`);
+
         const session = getSession(payload.room);
         console.log(session, payload.room);
         if (!session) return;
 
+        if (session.pendingRequest && eventType !== EventType.TARGET_SELECTION) {
+            console.warn(`${message} failed: waiting for pending request`);
+            return;
+        }
+
         const result = (session[methodName] as (p: any) => R)(payload);
-        console.log(result);
         if (!result.success) {
             console.warn(`${message} failed:`, (result as any).reason);
             return;
         }
 
-
-
         const extra = extractExtra ? extractExtra(result as Extract<R, { success: true }>) : {};
+
+        const successResult = result as Extract<R, { success: true }>;
+
+        if (successResult.waitForClient) {
+            extra.waitForClient = successResult.waitForClient;
+            session.pendingRequest = successResult.waitForClient;
+        }
         broadcastEvent(io, payload.room, eventType, payload.playerId, session.state, extra);
     });
 }
@@ -144,7 +155,7 @@ export function initGameMethods(socket: Socket, io: Server) {
         io,
         'change-position',
         'applyChangePosition',
-        EventType.CARD_DRAWN
+        EventType.CHANGE_POSITION
     );
     registerHandler<ManaBoostPayload, 'applyManaBoost', ReturnType<GameSession['applyManaBoost']>>(
         socket,
@@ -152,5 +163,12 @@ export function initGameMethods(socket: Socket, io: Server) {
         'mana-boost',
         'applyManaBoost',
         EventType.MANA_BOOST
+    );
+    registerHandler<TargetSelectionPayload, 'applyTargetSelection', ReturnType<GameSession['applyTargetSelection']>>(
+        socket,
+        io,
+        'select-target',
+        'applyTargetSelection',
+        EventType.TARGET_SELECTION
     );
 }

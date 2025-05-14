@@ -7,3 +7,16 @@ img {
 #app {
     overflow: hidden;
 }
+
+
+.waiting-action-mode * {
+    pointer-events: none !important;
+}
+
+.waiting-action-mode .targetable {
+    pointer-events: auto !important;
+    outline: 4px solid #00ff99;
+    border-radius: 12px;
+    animation: pulse 1s infinite ease-in-out;
+    cursor: pointer !important;
+}

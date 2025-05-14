@@ -1,14 +1,27 @@
 // server/testDecks.ts
 
+import { CardParams } from "../../shared/interfaces";
+import { cardTemplates, CardTemplateMap } from "./data/testCards";
+
+
 export const testDecks = [
     [
-        { name: 'Topolino Coraggioso', quantity: 2 },
-        { name: 'Ronin randagio', quantity: 3 },
-        { name: 'Orco delle rovine', quantity: 2 },
+
+        { card: cardTemplates.GoblinSlave, quantity: 3 },
+        { card: cardTemplates.Fireball, quantity: 3 },
+        { card: cardTemplates.DrunkenGoblin, quantity: 3 },
+        { card: cardTemplates.GoblinScout, quantity: 3 },
+        { card: cardTemplates.GreedyGoblin, quantity: 3 },
+        { card: cardTemplates.ForgeInitiate, quantity: 12 },
     ],
     [
-        { name: 'Buffone dello stretto', quantity: 3 },
-        { name: 'Ragno astuto', quantity: 4 },
-        { name: 'Erede della stirpe', quantity: 2 },
+
+
+        { card: cardTemplates.GoblinSlave, quantity: 3 },
+        { card: cardTemplates.Fireball, quantity: 3 },
+        { card: cardTemplates.DrunkenGoblin, quantity: 3 },
+        { card: cardTemplates.GoblinScout, quantity: 3 },
+        { card: cardTemplates.GreedyGoblin, quantity: 3 },
+        { card: cardTemplates.ForgeInitiate, quantity: 12 },
     ]
 ];

@@ -1,4 +1,5 @@
-import type { Color, CardType, SubType, CardParams } from './interfaces';
+import { EffectType } from './Effect';
+import type { Color, CardType, SubType, CardParams, Keyword } from './interfaces';
 
 
 
@@ -9,16 +10,20 @@ class Card {
     image_url: string;
     attack: number | null;
     defense: number | null;
+    originalAttack: number | null;
+    originalDefense: number | null;
     cost: number;
+    originalCost: number;
     isFoil: boolean;
     isActive: boolean;
     isHorizontal: boolean;
-    keywords: string[];
+    keywords: Keyword[];
     color: Color | "HIDDEN";
     type: CardType | "HIDDEN";
-    subtype: SubType | "HIDDEN";
+    subtype: SubType | "HIDDEN" | null;
     effectText: string;
     ownerId: string;
+    effectTypes: EffectType[]
 
     constructor({
         templateId,
@@ -36,16 +41,20 @@ class Card {
         isActive = true,
         ownerId,
         keywords = [],
+        effectTypes = [],
         effectText = '',
 
-    }: CardParams) {
+    }) {
         this.templateId = templateId;
         this.instanceId = instanceId;
         this.name = name;
         this.image_url = image_url;
         this.attack = attack;
         this.defense = defense;
+        this.originalAttack = attack;
+        this.originalDefense = defense;
         this.cost = cost;
+        this.originalCost = cost;
         this.isFoil = isFoil;
         this.effectText = effectText;
         this.isActive = isActive;
@@ -55,6 +64,7 @@ class Card {
         this.subtype = subtype;
         this.ownerId = ownerId;
         this.isHorizontal = isHorizontal;
+        this.effectTypes = effectTypes;
     }
 
 }

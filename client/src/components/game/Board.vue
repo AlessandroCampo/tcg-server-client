@@ -1,13 +1,13 @@
 <template>
     <div class="board" :class="isEnemy && 'mb-3'">
         <div v-for="(card, i) in player.board" :key="'field-card-' + i" class="board-card-wrapper"
-            @dblclick="handleDoubleClick(card)"> <!-- Handle Change positon -->
+            @dblclick="handleDoubleClick(card)" @click="handleClick(card)"> <!-- Handle Change positon -->
             <!-- NEW WRAPPER: drag wrapper -->
             <div class="drag-wrapper" :data-id="card.instanceId" :class="[
                 isEnemy ? 'enemy-board-card' : 'my-board-card',
                 !isEnemy && card.isActive ? 'draggable' : '',
-
-
+                availableTargets.length && availableTargets.some((c: Card) => c.instanceId == card.instanceId) ? 'targetable' : '',
+                availableTargets.length && !availableTargets.some((c: Card) => c.instanceId == card.instanceId) ? 'not-targetable' : '',
             ]" @dragstart.prevent>
                 <div class="board-card" :class="[card.isHorizontal ? 'horizontal' : 'vertical',
                 card.isActive ? 'active' : 'inactive'
@@ -40,8 +40,10 @@ import { useGameController } from '@/stores/gameController';
 import { validator } from '@shared/validations';
 import { EventType } from '@shared/interfaces';
 import { setupDraggable } from '@/composables/useDraggable';
+import { useMultiplayer } from '@/composables/useMultiplayer';
 
 const gameController = useGameController();
+const { availableTargets, onTargetSelected } = useMultiplayer();
 
 
 interface HandContainerProps {
@@ -164,8 +166,12 @@ onMounted(() => {
 })
 
 const handleDoubleClick = (card: Card) => {
-    if (isEnemy) return;
+    if (isEnemy || availableTargets.value.length) return;
     gameController.changePosition(card.instanceId);
+}
+const handleClick = (card: Card) => {
+    if (!availableTargets.value.length || !onTargetSelected.value) return;
+    onTargetSelected.value(card.instanceId);
 }
 
 
@@ -281,5 +287,41 @@ const handleDoubleClick = (card: Card) => {
 img,
 div[absolute-inner-text] {
     pointer-events: none;
+}
+
+.targetable {
+    outline: 4px solid #00ff99;
+    border-radius: 12px;
+    animation: pulse 1s infinite ease-in-out;
+    cursor: pointer !important;
+}
+
+.targetable:hover {
+    transform: scale(1.05);
+    transition: transform 0.15s ease;
+}
+
+.drag-wrapper.not-targetable {
+    pointer-events: none;
+    filter: grayscale(60%) brightness(0.8);
+    opacity: 0.6;
+}
+
+
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 255, 153, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 12px rgba(0, 255, 153, 0);
+        scale: 1.03;
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 255, 153, 0);
+        scale: 1;
+    }
 }
 </style>

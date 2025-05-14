@@ -96,6 +96,8 @@ export const useGameController = defineStore('game', () => {
         if (opponentPlayer.value) {
             opponentPlayer.value.updateFromState(oppponentPlayerState.value);
         }
+
+        console.log(myPlayer.value);
     };
 
 

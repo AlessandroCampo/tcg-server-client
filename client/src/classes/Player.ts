@@ -1,11 +1,8 @@
 import { gameRules } from '@shared/gameRules';
 
-import { useCardEffect } from "@/composables/useCardEffect";
 import { useGameController } from "@/stores/gameController";
-import { EffectType } from "./Effect";
 import { CardType, PlayerState, GameState } from "@shared/interfaces";
 import { Card } from '@shared/Card';
-const { activateEffect } = useCardEffect();
 
 
 
@@ -98,8 +95,6 @@ export class Player {
         if (card.type == CardType.MINION) {
             this.board.push(card);
         }
-        this.mana = state.players[this.id].mana;
-        activateEffect(card, EffectType.ON_PLAY);
 
     }
 

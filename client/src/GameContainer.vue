@@ -8,15 +8,18 @@ import { useGameController } from './stores/gameController';
 import { storeToRefs } from 'pinia';
 import QueueButton from './components/misc/QueueButton.vue';
 
-const { isWaiting } = useMultiplayer();
+const { isWaiting, availableTargets } = useMultiplayer();
 const store = useGameController();
 const { myPlayer, opponentPlayer, isMyTurn } = storeToRefs(store);
 
 </script>
 
 <template>
-  <div v-if="!isWaiting && myPlayer && opponentPlayer" class="canvas overflow-hidden bg-slate-600">
+  <div v-if="!isWaiting && myPlayer && opponentPlayer" class="canvas overflow-hidden bg-slate-600"
+    :class="availableTargets.length && 'waiting-action-mode'">
     <!-- Enemy side -->
+
+
     <PlayerArea :my-player="opponentPlayer" :enemy-player="myPlayer" :is-enemy="true" />
 
     <!-- Switch turn button between zones -->
@@ -24,6 +27,7 @@ const { myPlayer, opponentPlayer, isMyTurn } = storeToRefs(store);
 
     <!-- Ally side -->
     <PlayerArea :my-player="myPlayer" :enemy-player="opponentPlayer" :is-enemy="false" />
+
   </div>
 
 </template>
@@ -41,5 +45,14 @@ const { myPlayer, opponentPlayer, isMyTurn } = storeToRefs(store);
   background-image: url('./assets/images/playmat.jpg');
   background-size: cover;
   background-position: 10px;
+}
+
+.waiting-action-mode {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.3);
+  height: 100vh;
+  width: 100vw;
+  z-index: 1;
+
 }
 </style>

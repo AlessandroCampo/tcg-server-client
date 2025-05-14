@@ -11,10 +11,18 @@ import {
     MinionAttackPayload,
     PlayerState,
     ChangePositionPayload,
-    ManaBoostPayload
+    ManaBoostPayload,
+    CardType,
+    Keyword,
+    ServerRequest
 } from '../../shared/interfaces';
 import { gameRules } from '../../shared/gameRules';
 import { Card } from '../../shared/Card';
+import { useEffect } from './game/effects/useEffect';
+import { EffectType } from '../../shared/Effect';
+import { cardEffects, drawCard } from './data/cardEffects';
+
+const { activateEffect } = useEffect();
 
 /**
  * Always‐succeeds draw. Returns new state.
@@ -25,8 +33,8 @@ export function draw(
 ): EventResult<{ state: GameState }> {
     const st = { ...state };
     const p = st.players[playerId];
-    const drawCount = Math.min(amount, p.deck.length);
-    p.hand.push(...p.deck.splice(0, drawCount));
+    drawCard(p, amount);
+
     return { success: true, state: st };
 }
 
@@ -38,9 +46,10 @@ export function playCard(
     state: GameState,
     { playerId, cardId }: PlayCardPayload
 ): EventResult<{ card: Card }> {
-    const st = { ...state };
+    const st = structuredClone(state);
     const p = st.players[playerId];
 
+    const [player, opponent] = getPlayersFromState(st, playerId);
     if (st.turnPlayerId !== playerId) {
         return { success: false, reason: 'Not your turn' };
     }
@@ -51,17 +60,26 @@ export function playCard(
     }
 
     const card = p.hand[idx];
+
     if (p.mana < card.cost) {
         return { success: false, reason: 'Insufficient mana' };
     }
 
     // all checks passed → play the card
     p.hand.splice(idx, 1);
-    card.isActive = false;
-    p.board.push(card);
-    p.mana -= card.cost;
+    if (!card.keywords.includes(Keyword.RUSH)) {
+        card.isActive = false;
+    }
 
-    console.log('card-played');
+    if (card.type == CardType.MINION) {
+        p.board.push(card);
+    }
+    p.mana -= card.cost;
+    activateEffect(card, EffectType.ON_PLAY, [player, opponent]);
+
+
+
+
     return { success: true, state: st, card: card };
 }
 
@@ -88,7 +106,7 @@ export function passTurn(
 
     let drawnCard
     if (active.deck.length > 0) {
-        drawnCard = active.deck.splice(0)[0];
+        drawnCard = active.deck.splice(0, 1)[0];
         active.hand.push(drawnCard);
     }
 
@@ -127,13 +145,12 @@ export function directAttack(
 
 
     const damage = card.attack ?? 0;
-    opponent.lifePoints = Math.max(opponent.lifePoints - damage, 0);
+    opponent.lifePoints = Math.max(opponent.lifePoints - 1, 0);
 
     card.isActive = false;
     card.isHorizontal = true;
-    if (opponent.lifePoints == 0) {
 
-    }
+    activateEffect(card, EffectType.ON_ATTACK, [player, opponent]);
     //player.board[idx] = card;
 
     return {
@@ -200,17 +217,69 @@ export function changePosition(
     const st = structuredClone(state);
     const [player, opponent] = getPlayersFromState(st, playerId);
     const card = player.board.find(c => c.instanceId == cardId);
+
+
     if (!card) {
         return { success: false, reason: 'Card not found on the board' };
     }
-    if (card.isActive) {
+    const effects = cardEffects[card.name] ?? [];
+
+    const onTapEffect = effects.find(eff => eff.type == EffectType.ON_TAP);
+
+
+
+
+
+    if (card.isActive && !onTapEffect) {
         return { success: false, reason: 'You can only switch the position of inactive units' };
     }
+
+
+
+
     if (card.isHorizontal) {
         return { success: false, reason: 'Your minion is already defending...' };
     }
 
+    const successRes: EventResult<{}> = {
+        success: true,
+        state: st,
+    };
+
     card.isHorizontal = true;
+    if (onTapEffect) {
+
+        if (onTapEffect.targets) {
+            console.log('asking targets', onTapEffect.validTargets([player, opponent], card));
+
+            return {
+                ...successRes,
+                waitForClient: {
+                    type: ServerRequest.TARGET_SELECTION,
+                    validTargets: onTapEffect.validTargets([player, opponent], card),
+                    card: card,
+                    playerId: playerId,
+                    effect: onTapEffect
+                },
+            };
+        }
+        onTapEffect.resolver([player, opponent], card);
+    }
+
+    return successRes;
+}
+export function resolveTargetSelection(
+    state: GameState,
+    payload: ManaBoostPayload
+): EventResult<{ state: GameState }> {
+
+    const { cardId, playerId } = payload;
+    const st = structuredClone(state);
+    const [player] = getPlayersFromState(st, playerId);
+
+
+    const card = player.board.find(c => c.instanceId == cardId);
+
     return {
         success: true,
         state: st,

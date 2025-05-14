@@ -1,3 +1,5 @@
+import { Card } from "./Card";
+import { GameState, PlayerState } from "./interfaces";
 
 
 // EffectType.ts
@@ -9,6 +11,7 @@ export enum EffectType {
     ON_DISCARD = "ON_DISCARD",       // When discarded
     ON_SUMMON = "ON_SUMMON",         // When summoned (bypassing 'play')
     ON_DESTROY = "ON_DESTROY",       // Explicit destroy (different from 'death' if needed)
+    ON_TAP = "ON_TAP",
 
     // Turn-Based
     START_OF_TURN = "START_OF_TURN",
@@ -43,25 +46,32 @@ export enum EffectType {
 
 
 export interface EffectContext {
-
     type: string;
-    condition?: () => boolean;
-    cost?: () => any;
-    resolver: () => any;
+    targets?: boolean;
+    condition?: (playerStates?: PlayerState[], card?: Card) => boolean; // Parameters are optional
+    cost?: (playerStates?: PlayerState[], card?: Card) => any;
+    resolver: (playerStates: PlayerState[], card?: Card, target?: Card) => any;
+    validTargets?: (playerStates: PlayerState[], card?: Card) => Card[];
 }
 
 export class Effect implements EffectContext {
-
     type: string;
-    condition: () => boolean;
-    cost: () => any;
-    resolver: () => any;
+    condition: (playerStates?: PlayerState[], card?: Card) => boolean;
+    cost: (playerStates?: PlayerState[], card?: Card) => any;
+    resolver: (playerStates: PlayerState[], card?: Card, target?: Card) => any;
+    validTargets: (playerStates: PlayerState[], card?: Card) => Card[];
+    targets: boolean;
 
     constructor(params: EffectContext) {
-
         this.type = params.type ?? "";
+
+        // Default condition function returns true if no players are passed
         this.condition = params.condition ?? (() => true);
+
         this.cost = params.cost ?? (() => { });
         this.resolver = params.resolver ?? (() => { });
+        this.validTargets = params.validTargets ?? (() => []);
+        this.targets = params.targets || false;
     }
+
 }

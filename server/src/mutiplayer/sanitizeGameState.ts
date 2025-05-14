@@ -45,7 +45,7 @@ export function sanitizeGameStateFor(
                 keywords: [],
                 effectText: '',
                 effectName: '',
-                effectType: '',
+                effectTypes: [],
             }));
         }
     }

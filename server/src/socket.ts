@@ -43,8 +43,9 @@ async function launchGame(room: string, socket: Socket, io: Server) {
     const startingPlayer = players[diceRoll()];
 
     // build and shuffle decks
-    const deckA = shuffle(await fetchDeckData(testDecks[0], a));
-    const deckB = shuffle(await fetchDeckData(testDecks[1], b));
+    const deckA = shuffle(fetchDeckData(testDecks[0], a));
+    const deckB = shuffle(fetchDeckData(testDecks[1], b));
+
 
     const initState: GameState = {
         players: {
@@ -70,6 +71,12 @@ async function launchGame(room: string, socket: Socket, io: Server) {
     };
 
     createSession(room, initState);
+
+    const session = getSession(room);
+    if (session) {
+        session.pendingRequest = null;
+    }
+
 
     // notify both
     for (const pid of players) {
