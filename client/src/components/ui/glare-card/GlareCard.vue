@@ -53,15 +53,17 @@
 
 
 
-            <div class="text" :class='isBt && card.btText ? "text-red-900" : "text-neutral-950"'>
-              {{ card.isHorizontal }}
+            <div class="text">
               <div class="mb-2  mx-auto px-2 keyword-container">
                 {{ card.keywords.join(',') }}
               </div>
-              <div v-show="isBt && card.btText">
-                {{ card.btText }}
+              <div>
+                <span v-show="isBt && card.btText" class="text-red-900 text-center">
+                  {{ card.btText }}
+                </span>
+                {{ card.effectText }}
               </div>
-              {{ card.effectText }}
+
             </div>
 
           </template>

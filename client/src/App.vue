@@ -13,10 +13,13 @@ import { BACKEND_URL, initSocket } from './composables/useSocket';
 const socketInit = ref(false);
 
 onBeforeMount(() => {
-  const userBackendUrl = prompt("Inserisci l'URL del server per il test:");
+  //const userBackendUrl = prompt("Inserisci l'URL del server per il test:");
+  /*LINK - 
   if (userBackendUrl) {
     BACKEND_URL.value = userBackendUrl;
   }
+  */
+
 
   initSocket();
   socketInit.value = true;
