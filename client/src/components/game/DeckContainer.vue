@@ -1,18 +1,18 @@
 <template>
-    <div>
-        <div class="deck-proxy" :class="isEnemy ? 'player' : 'opponent'">
-            <figure class="deck-container">
-                <img v-for="(card, index) in cardsAmount" :key="index" class="card" :src="CardBack"
-                    :style="{ zIndex: cardsAmount - index, marginTop: `${index * 8.2}px`, transform: `translateY(-${index * 10}px)` }" />
 
-                <img class="card" :src="CardBack" />
+    <div class="deck-proxy" :class="isEnemy ? 'opponent' : 'player'">
+        <figure class="deck-container">
+            <img v-for="(card, index) in cardsAmount" :key="index" class="card" :src="CardBack"
+                :style="{ zIndex: cardsAmount - index, marginTop: `${index * 9.5}px`, transform: `translateY(-${index * 10}px)` }" />
 
-                <div class="deck-counter">
-                    {{ cardsAmount }}
-                </div>
-            </figure>
-        </div>
+            <img class="card" :src="CardBack" />
+
+            <div class="deck-counter">
+                {{ cardsAmount }}
+            </div>
+        </figure>
     </div>
+
 
 
 </template>
@@ -20,12 +20,54 @@
 <script setup lang="ts">
 
 import CardBack from '@/assets/images/cards/card-back.png';
+import { onMounted } from 'vue';
+import interact from 'interactjs';
+import { useMultiplayer } from '@/composables/useMultiplayer';
+import { Player } from '@/classes/Player';
+
+const { emitEvent } = useMultiplayer();
 
 
 const { isEnemy, cardsAmount } = defineProps<{
     isEnemy: boolean;
     cardsAmount: number;
 }>();
+
+onMounted(() => {
+    interact('.player.deck-proxy').dropzone({
+        accept: '.hand-card.ally',
+        overlap: 0.75,
+        ondropactivate(event) {
+            event.target.classList.add('drop-active');
+        },
+
+        ondragenter(event) {
+            event.target.classList.add('drop-target');
+        },
+
+        ondragleave(event) {
+            event.target.classList.remove('drop-target');
+        },
+
+        ondrop(event) {
+            if (isEnemy) return;
+            const draggedElement = event.relatedTarget;
+            if (draggedElement) {
+                const droppedId = draggedElement.dataset.id;
+                console.log('dropped on deck', droppedId);
+
+                emitEvent('reroll', { rerolledCardId: droppedId })
+            }
+        },
+
+
+
+        ondropdeactivate(event) {
+            event.target.classList.remove('drop-active');
+            event.target.classList.remove('drop-target');
+        }
+    });
+})
 
 </script>
 

@@ -1,5 +1,5 @@
 <template>
-    <div class="relative w-[120px] h-[120px] leader" :class="isEnemy ? 'droppable enemy' : 'my'">
+    <div class="relative w-[120px] h-[120px] base" :class="isEnemy ? 'droppable enemy' : 'my'">
         <svg class="absolute top-0 left-0" width="120" height="120">
             <circle class="text-gray-300" stroke="currentColor" stroke-width="10" fill="transparent" r="50" cx="60"
                 cy="60" />
@@ -7,14 +7,20 @@
                 stroke-linecap="round" :stroke-dasharray="circumference" :stroke-dashoffset="dashOffset"
                 transform="rotate(-90 60 60)" style="transition: stroke-dashoffset 0.5s ease" />
         </svg>
-
-        <img :src="imageUrl" alt="leader"
-            class="absolute top-1/2 left-1/2 w-[80px] h-[80px] rounded-full object-cover transform -translate-x-1/2 -translate-y-1/2" />
+        <div class="absolute top-1/2 left-1/2 w-[80px] h-[80px] rounded-full  transform -translate-x-1/2 -translate-y-1/2"
+            style="border: 2px solid red">
+            <img :src="imageUrl" alt="base" class="object-cover h-full w-full rounded-full" />
+            <div class="absolute top-1/2 left-1/2 rounded-full  transform -translate-x-1/2 -translate-y-1/2"
+                v-show="myPlayer.shield">
+                🛡️
+            </div>
+        </div>
 
         <div
             class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-xl font-bold pointer-events-none drop-shadow">
             {{ displayedValue }}
         </div>
+
     </div>
 </template>
 
@@ -32,7 +38,8 @@ const props = defineProps<{
     value: number;
     image?: string;
     isEnemy: boolean;
-    enemyPlayer: Player
+    enemyPlayer: Player;
+    myPlayer: Player;
 }>();
 
 const radius = 50;
@@ -48,7 +55,7 @@ const displayedValue = ref(props.value);
 const bindDrop = () => {
     if (!props.isEnemy) return;
     console.log('binding');
-    interact('.leader.droppable')
+    interact('.base.droppable')
         .dropzone({
             accept: '.draggable.my-board-card',
             ondrop: function (event) {

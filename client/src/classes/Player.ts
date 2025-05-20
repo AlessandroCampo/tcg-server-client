@@ -4,8 +4,6 @@ import { useGameController } from "@/stores/gameController";
 import { CardType, PlayerState, GameState } from "@shared/interfaces";
 import { Card } from '@shared/Card';
 
-
-
 export class Player {
 
     id: string;
@@ -19,6 +17,8 @@ export class Player {
     isActiveTurn: boolean;
     opponent: Player | undefined;
     isMyPlayer: boolean;
+    shield: boolean;
+    bloodThirst: boolean;
 
     constructor(isMyPlayer: boolean, id: string) {
 
@@ -33,6 +33,8 @@ export class Player {
         this.isActiveTurn = false;
         this.opponent = undefined;
         this.isMyPlayer = isMyPlayer;
+        this.bloodThirst = false;
+        this.shield = true;
     }
 
     static fromState(state: PlayerState, isMyPlayer: boolean, playerId: string): Player {
@@ -52,6 +54,8 @@ export class Player {
         return player;
     }
 
+
+
     updateFromState(state: PlayerState) {
         this.deck = state.deck.map(c => new Card({ ...c, }));
         this.hand = state.hand.map(c => new Card({ ...c }));
@@ -59,6 +63,8 @@ export class Player {
         this.board = state.board.map(c => new Card({ ...c, }));
         this.lifePoints = state.lifePoints;
         this.mana = state.mana;
+        this.bloodThirst = state.bloodThirst;
+        this.shield = state.shield;
     }
 
 

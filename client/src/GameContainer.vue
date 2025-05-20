@@ -16,7 +16,7 @@ const { myPlayer, opponentPlayer, isMyTurn } = storeToRefs(store);
 
 <template>
   <div v-if="!isWaiting && myPlayer && opponentPlayer" class="canvas overflow-hidden bg-slate-600"
-    :class="availableTargets.length && 'waiting-action-mode'">
+    :class="availableTargets.length && 'waiting-action-mode'" :style="'back'">
     <!-- Enemy side -->
 
 
@@ -35,8 +35,8 @@ const { myPlayer, opponentPlayer, isMyTurn } = storeToRefs(store);
 
 <style scoped>
 .canvas {
-  height: 100dvh;
-  width: 100dvw;
+  height: 100vh;
+  width: 100vw;
   overflow: hidden;
   display: flex;
   justify-content: space-between;
@@ -44,7 +44,7 @@ const { myPlayer, opponentPlayer, isMyTurn } = storeToRefs(store);
   flex-direction: column;
   background-image: url('./assets/images/playmat.jpg');
   background-size: cover;
-  background-position: 10px;
+  background-position: center;
 }
 
 .waiting-action-mode {

@@ -2,12 +2,16 @@
     <div :class="['player-area', isEnemy ? 'enemy' : 'my', 'flex-col', 'ga-5']" v-if="myPlayer && enemyPlayer">
 
         <div class="deck-container" :class="isEnemy ? 'enemy' : 'my'">
+            <div class="text-black">
+
+            </div>
             <DeckContainer :cards-amount="myPlayer.deck.length" :is-enemy="isEnemy" />
         </div>
 
         <div class="mana-container" :class="isEnemy ? 'enemy' : 'my'">
             <div v-if="isEnemy">
-                <LeaderHealthCircle :value="myPlayer.lifePoints" :is-enemy="true" :enemy-player="enemyPlayer" />
+                <LeaderHealthCircle :value="myPlayer.lifePoints" :is-enemy="true" :enemy-player="enemyPlayer"
+                    :my-player="myPlayer" />
             </div>
             <div class="flex gap-2">
 
@@ -16,7 +20,8 @@
                 ]" class="mana" />
             </div>
             <div v-if="!isEnemy">
-                <LeaderHealthCircle :value="myPlayer.lifePoints" :is-enemy="false" :enemy-player="enemyPlayer" />
+                <LeaderHealthCircle :value="myPlayer.lifePoints" :is-enemy="false" :enemy-player="enemyPlayer"
+                    :my-player="myPlayer" />
             </div>
         </div>
 
@@ -27,9 +32,9 @@
             <div class="board-container">
                 <Board :player="myPlayer" :is-enemy="isEnemy" />
             </div>
-            <div class="hand-container" :class="isEnemy ? 'enemy' : 'my'">
-                <HandContainer :player="myPlayer" :is-enemy="isEnemy" />
-            </div>
+        </div>
+        <div class="hand-container" :class="isEnemy ? 'enemy' : 'my'">
+            <HandContainer :player="myPlayer" :is-enemy="isEnemy" />
         </div>
 
 
@@ -48,6 +53,9 @@ import ManaIcon from '../misc/ManaIcon.vue';
 import { gameRules } from '@shared/gameRules';
 import { Player } from '@/classes/Player';
 import { onMounted } from 'vue';
+import { useMultiplayer } from '@/composables/useMultiplayer';
+
+const { myPlayerId } = useMultiplayer();
 
 import { setupDraggable } from '@/composables/useDraggable';
 
@@ -64,6 +72,10 @@ onMounted(() => {
 </script>
 
 <style lang="css" scoped>
+.player-area {
+    overflow: hidden !important;
+}
+
 .mana-container {
     position: absolute;
     color: white;
@@ -113,24 +125,49 @@ onMounted(() => {
 .hand-container {
     display: flex;
     justify-content: center;
-    max-width: 60vw;
+    max-width: 65vw;
     overflow: visible;
+    position: absolute;
+    height: 240px;
+    width: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
 }
 
 .hand-container.enemy {
-    transform: translateY(-130px);
-}
-
-.board-container {
-    transform: translateY(-40%);
+    top: -15%;
 }
 
 .hand-container.my {
-    transform: translateY(-40%);
+    bottom: 0%;
+    height: 240px;
+    width: 100%;
 }
+
+
+
+.board-container {
+    transform: translateY(-40%);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+}
+
+
+.enemy .board-container {
+    top: 15%;
+}
+
+.my .board-container {
+    top: 45%;
+}
+
+
 
 .player-area {
     display: flex;
-    justify-content: center;
 }
 </style>

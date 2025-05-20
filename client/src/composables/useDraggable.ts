@@ -1,6 +1,9 @@
 import interact from 'interactjs';
 import { useGameController } from '@/stores/gameController';
 import { storeToRefs } from 'pinia';
+import { useMultiplayer } from './useMultiplayer';
+
+
 export function setupDraggable(selector: string) {
 
     const { isMyTurn } = storeToRefs(useGameController());
@@ -22,8 +25,8 @@ export function setupDraggable(selector: string) {
             },
 
             move(event) {
-
-                if (!isMyTurn.value) return;
+                const { availableTargets } = useMultiplayer();
+                if (!isMyTurn.value || availableTargets.value.length) return;
                 const target = event.target as HTMLElement;
 
                 const x = (parseFloat(target.dataset.x!) || 0) + event.dx;

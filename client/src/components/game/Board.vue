@@ -1,28 +1,15 @@
 <template>
     <div class="board" :class="isEnemy && 'mb-3'">
-        <div v-for="(card, i) in player.board" :key="'field-card-' + i" class="board-card-wrapper"
-            @dblclick="handleDoubleClick(card)" @click="handleClick(card)"> <!-- Handle Change positon -->
-            <!-- NEW WRAPPER: drag wrapper -->
-            <div class="drag-wrapper" :data-id="card.instanceId" :class="[
-                isEnemy ? 'enemy-board-card' : 'my-board-card',
-                !isEnemy && card.isActive ? 'draggable' : '',
-                availableTargets.length && availableTargets.some((c: Card) => c.instanceId == card.instanceId) ? 'targetable' : '',
-                availableTargets.length && !availableTargets.some((c: Card) => c.instanceId == card.instanceId) ? 'not-targetable' : '',
-            ]" @dragstart.prevent>
-                <div class="board-card" :class="[card.isHorizontal ? 'horizontal' : 'vertical',
-                card.isActive ? 'active' : 'inactive'
+        <transition-group name="destroy" tag="div" class="relative w-full h-full">
+            <CardWrapper v-for="(card, i) in player.board" :key="'field-card-' + card.instanceId" :card="card"
+                :index="i" :left="cardPositions[i]?.left" :is-enemy="isEnemy" class="destroy-card"
+                :is-being-destroyed="destroyedCardsIds.includes(card.instanceId)" :player="player" />
+        </transition-group>
 
-                ]">
-                    <GlareCard :card="card" :show-back="false" :is-enemy="isEnemy" />
-                </div>
-            </div>
-        </div>
-
-        <div v-if="player.board.length === 0" class="empty-placeholder">
-
-        </div>
+        <div v-if="player.board.length === 0" class="empty-placeholder" />
     </div>
 </template>
+
 
 <script setup lang="ts">
 // =============================
@@ -34,16 +21,17 @@ import { Player } from '@/classes/Player';
 import { Card } from '@shared/Card';
 
 import GlareCard from '../ui/glare-card/GlareCard.vue';
-import { onMounted } from 'vue';
+import { onMounted, computed, watch, ref, nextTick } from 'vue';
 import interact from 'interactjs';
 import { useGameController } from '@/stores/gameController';
 import { validator } from '@shared/validations';
 import { EventType } from '@shared/interfaces';
 import { setupDraggable } from '@/composables/useDraggable';
 import { useMultiplayer } from '@/composables/useMultiplayer';
+import CardWrapper from './CardWrapper.vue';
 
 const gameController = useGameController();
-const { availableTargets, onTargetSelected } = useMultiplayer();
+const { availableTargets, onTargetSelected, destroyedCardsIds } = useMultiplayer();
 
 
 interface HandContainerProps {
@@ -52,6 +40,38 @@ interface HandContainerProps {
 };
 
 const { player, isEnemy } = defineProps<HandContainerProps>();
+
+
+
+const cardRefs = ref<HTMLElement[]>([]);
+
+// Mappa con le posizioni precedenti
+const previousLeftMap = new Map<string, number>();
+
+watch(() => player.board.map(c => c.instanceId), async () => {
+    await nextTick(); // Aspetta che il DOM venga aggiornato
+
+    player.board.forEach((card, i) => {
+        const el = cardRefs.value[i];
+        if (!el) return;
+
+        const newLeft = cardPositions.value[i]?.left ?? 0;
+        const prevLeft = previousLeftMap.get(card.instanceId) ?? newLeft;
+        const deltaX = prevLeft - newLeft;
+
+        if (deltaX !== 0) {
+            el.style.transition = 'none';
+            el.style.transform = `translateX(${deltaX}px)`;
+
+            requestAnimationFrame(() => {
+                el.style.transition = 'transform 300ms ease';
+                el.style.transform = `translate(${deltaX}px, -50%)`;
+            });
+        }
+
+        previousLeftMap.set(card.instanceId, newLeft);
+    });
+});
 
 
 onMounted(() => {
@@ -165,15 +185,27 @@ onMounted(() => {
     });
 })
 
-const handleDoubleClick = (card: Card) => {
-    if (isEnemy || availableTargets.value.length) return;
-    gameController.changePosition(card.instanceId);
-}
-const handleClick = (card: Card) => {
-    if (!availableTargets.value.length || !onTargetSelected.value) return;
-    onTargetSelected.value(card.instanceId);
-}
 
+
+const cardWidth = 240;
+const spacing = 40;
+
+const cardPositions = computed(() => {
+    const result: { left: number; }[] = [];
+    const totalCards = player.board.length;
+    const containerWidth = 0.65 * window.innerWidth;
+
+    const totalWidth = totalCards * cardWidth + (totalCards - 1) * spacing;
+    let startX = (containerWidth - totalWidth) / 2;
+
+    for (let i = 0; i < totalCards; i++) {
+        result.push({
+            left: startX + i * (cardWidth + spacing),
+        });
+    }
+
+    return result;
+})
 
 
 
@@ -218,20 +250,15 @@ const handleClick = (card: Card) => {
 
 <style scoped>
 .board {
+    position: relative;
     background-color: rgba(255, 255, 255, 0.4);
-    /* fixed invalid rgba */
     border: 1px solid white;
     border-radius: 1rem;
-    width: 60vw;
+    width: 65vw;
     height: 280px;
     padding-block: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-
 }
+
 
 .board-card-wrapper {
     width: 240px;
@@ -239,7 +266,9 @@ const handleClick = (card: Card) => {
     display: flex;
     justify-content: center;
     align-items: center;
+    transform: translateY(-50%);
     user-select: none;
+    transition: transform 0.15s ease;
 }
 
 /* NEW drag wrapper: gets translated directly, but NO transition */
@@ -323,5 +352,23 @@ div[absolute-inner-text] {
         box-shadow: 0 0 0 0 rgba(0, 255, 153, 0);
         scale: 1;
     }
+}
+
+.destroy-leave-active {
+    transition: all 600ms ease-out;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.destroy-leave-from {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+    filter: blur(0px);
+}
+
+.destroy-leave-to {
+    transform: scale(0.2) rotate(180deg);
+    opacity: 0;
+    filter: blur(4px);
 }
 </style>

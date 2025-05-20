@@ -8,6 +8,11 @@ img {
     overflow: hidden;
 }
 
+html {
+    overflow: hidden;
+}
+
+
 
 .waiting-action-mode * {
     pointer-events: none !important;

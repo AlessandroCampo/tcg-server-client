@@ -1,23 +1,26 @@
 // composables/useMultiplayer.ts
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { Card } from '@shared/Card';
 import { useSocket } from './useSocket';
 import { store } from '@/stores/testStore';
 import { CardPlayedEvent, EventType, GameEvent, GameState, ClientInputRequest, ServerRequest, TargetSelectionRequest } from '@shared/interfaces';
 import { myRouter } from '@/router';
+import { useAnimator } from './useAnimator';
+const { animateCardToBoard, animateAttack } = useAnimator();
 
 
-const { socket } = useSocket();
 
 const room = ref<string | null>(null);
-const myPlayerId = ref<string | null>(null);
+const myPlayerId = ref<string | null>('');
 const opponentPlayerId = ref<string | null>(null);
 const isWaiting = ref(false);
 const availableTargets = ref<Card[]>([]);
 const onTargetSelected = ref<((id: string) => void) | null>(null);
-
+const destroyedCardsIds = ref<(String[])>([]);
 
 import { useGameController } from '@/stores/gameController';
+import gsap from 'gsap';
+import { sleep } from '@/utils';
 
 interface BasePayload {
     room: string;
@@ -32,7 +35,7 @@ let userInputPromise: Promise<any> | null = null;
 let listenersRegistered = false;
 
 export const useMultiplayer = () => {
-
+    const { socket } = useSocket();
     const gameController = useGameController();
 
     onMounted(() => {
@@ -59,7 +62,7 @@ export const useMultiplayer = () => {
             opponentPlayerId.value = Object.keys(data.gameState.players).find(id => id !== myPlayerId.value)!;
             gameController.startGame(data.gameState);
             myRouter.push('game');
-            console.log(myPlayerId.value);
+
         });
 
         socket.on('game-over', (data) => {
@@ -81,12 +84,21 @@ export const useMultiplayer = () => {
             if (player && player.value) {
                 switch (event.type) {
                     case EventType.DIRECT_ATTACK:
-                        console.log(event.card);
+                        await animateAttack(event.card, 'base');
                         break;
                     case EventType.CARD_PLAYED:
                         const playedCard = new Card({ ...event.card });
                         player.value.playCard(playedCard, state);
+                        await animateCardToBoard(playedCard);
+                        await sleep(0.5);
                         break;
+
+                    case EventType.APPLY_MINION_ATTACK:
+                        destroyedCardsIds.value = event.destroyedCardIds;
+                        await animateAttack(event.attacker, event.defender);
+                        destroyedCardsIds.value = [];
+                        break;
+
 
                     case EventType.TURN_ENDED:
                         //emitEvent('turn-start');
@@ -97,6 +109,13 @@ export const useMultiplayer = () => {
                     case EventType.TARGET_SELECTION:
                         availableTargets.value = [];
                         onTargetSelected.value = null;
+                        break;
+
+                    case EventType.REROLL:
+                        player.value.hand = player.value.hand.filter(c => c.instanceId != event.rerolledCardId);
+                        await nextTick();
+                        await sleep(1);
+
                         break;
 
                 }
@@ -122,6 +141,7 @@ export const useMultiplayer = () => {
     })
 
     function emitEvent<T extends object>(event: string, data?: T) {
+        console.log(event, room.value, myPlayerId.value);
         if (!room.value || !myPlayerId.value) return;
 
         console.log('emitting event: ' + event);
@@ -136,7 +156,8 @@ export const useMultiplayer = () => {
 
     function handleTargetSelection(waitForClient: TargetSelectionRequest) {
         return new Promise((resolve) => {
-            if (waitForClient.playerId === myPlayerId.value) {
+            console.log(waitForClient.playerId, myPlayerId.value);
+            if (waitForClient.playerId == myPlayerId.value) {
                 availableTargets.value = waitForClient.validTargets;
 
                 // Assign a handler to be used by the card click
@@ -157,15 +178,6 @@ export const useMultiplayer = () => {
     }
 
 
-    async function waitForUserInput() {
-        if (userInputPromise) {
-            const userInput = await userInputPromise;
-            return userInput;
-        }
-
-
-
-    }
 
     return {
         room,
@@ -174,6 +186,7 @@ export const useMultiplayer = () => {
         opponentPlayerId,
         emitEvent,
         availableTargets,
-        onTargetSelected
+        onTargetSelected,
+        destroyedCardsIds
     };
 };

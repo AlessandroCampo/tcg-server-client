@@ -10,6 +10,7 @@ import { useMultiplayer } from '@/composables/useMultiplayer';
 
 const { isWaiting } = useMultiplayer();
 
+
 const { emit, on } = useSocket();
 
 const joinQueue = () => {

@@ -7,7 +7,7 @@
     ]" @pointerenter="handlePointerEnter" @pointerleave="handlePointerLeave">
 
     <div
-      class="duration-[var(--duration)] ease-[var(--easing)] delay-[var(--delay)] grid h-full w-full origin-center overflow-hidden rounded-lg border border-slate-800 transition-transform will-change-transform [transform:rotateY(var(--r-x))_rotateX(var(--r-y))] hover:filter-none hover:[--duration:200ms] hover:[--easing:linear] hover:[--opacity:0.6]">
+      class="duration-[var(--duration)] ease-[var(--easing)] delay-[var(--delay)] grid h-full w-full origin-center overflow-hidden rounded-lg  border-slate-800 transition-transform will-change-transform [transform:rotateY(var(--r-x))_rotateX(var(--r-y))] hover:filter-none hover:[--duration:200ms] hover:[--easing:linear] hover:[--opacity:0.6]">
       <div class="grid  size-full mix-blend-soft-light [clip-path:inset(0_0_0_0_round_var(--radius))] [grid-area:1/1]">
 
         <div :class="cn('size-full bg-slate-950', props.class)">
@@ -17,12 +17,16 @@
             <img :src="cardTemplate" alt="card artwork" class="object-cover w-full block h-full card-template" />
 
 
+            <!-- 
+                 <img :src="props.card.image_url" alt="card artwork" class="object-cover w-full block h-full" />
+            -->
 
-            <img :src="props.card.image_url" alt="card artwork" class="object-cover w-full block h-full" />
+            <img :src="'/artworks/' + card.templateId + '.jpg'" alt="card artwork"
+              class="object-cover w-full block h-full" />
 
 
             <div class="card-name">
-              <h2>
+              <h2 v-show="!card.statusConditions.includes(StatusCondition.CHAINED)">
                 {{ card.name }}
               </h2>
 
@@ -46,9 +50,20 @@
               {{ card.defense }}
             </div>
 
-            <p class="text">
+
+
+
+            <div class="text" :class='isBt && card.btText ? "text-red-900" : "text-neutral-950"'>
+              {{ card.isHorizontal }}
+              <div class="mb-2  mx-auto px-2 keyword-container">
+                {{ card.keywords.join(',') }}
+              </div>
+              <div v-show="isBt && card.btText">
+                {{ card.btText }}
+              </div>
               {{ card.effectText }}
-            </p>
+            </div>
+
           </template>
 
           <template v-else>
@@ -74,10 +89,11 @@
 import { cn } from '@/lib/utils';
 import { useTimeoutFn } from '@vueuse/core';
 import { computed, ref } from 'vue';
-import { Card } from '@shared/Card';
+import { Card, StatusCondition } from '@shared/Card';
 import cardback from '@/assets/images/cards/card-back.png';
 import minionTemplate from '@/assets/images/cards/card-template.png';
 import spellTemplate from '@/assets/images/cards/spell-template.png';
+import { Player } from '@/classes/Player';
 
 
 
@@ -88,6 +104,7 @@ interface GlareCardProps {
   card: Card,
   showBack: boolean,
   isEnemy: boolean,
+  isBt?: boolean
 }
 
 const props = defineProps<GlareCardProps>();
@@ -105,24 +122,24 @@ const state = ref({
 
 const getCostClass = computed(() => {
   return {
-    'text-green-500': props.card.cost > props.card.originalCost,
-    'text-red-500': props.card.cost < props.card.originalCost,
+    'text-green-200': props.card.cost > props.card.originalCost,
+    'text-red-200': props.card.cost < props.card.originalCost,
     'text-white': props.card.cost === props.card.originalCost
   };
 })
 const getAttackClass = computed(() => {
   if (!props.card.attack || !props.card.originalAttack) return '';
   return {
-    'text-green-500': props.card.attack > props.card.originalAttack,
-    'text-red-500': props.card.attack < props.card.originalAttack,
+    'text-green-400': props.card.attack > props.card.originalAttack,
+    'text-red-400': props.card.attack < props.card.originalAttack,
     'text-white': props.card.attack === props.card.originalAttack
   };
 })
 const getDefenseClass = computed(() => {
   if (!props.card.defense || !props.card.originalDefense) return '';
   return {
-    'text-green-500': props.card.defense > props.card.originalDefense,
-    'text-red-500': props.card.defense < props.card.originalDefense,
+    'text-green-400': props.card.defense > props.card.originalDefense,
+    'text-red-400': props.card.defense < props.card.originalDefense,
     'text-white': props.card.defense === props.card.originalDefense
   };
 })
@@ -230,7 +247,6 @@ function handlePointerLeave() {
 .text {
   position: absolute;
   z-index: 100;
-  color: white;
   font-weight: bold;
 }
 
@@ -241,22 +257,60 @@ function handlePointerLeave() {
   color: white;
   font-weight: bold;
   text-transform: uppercase;
-  font-size: .5rem !important;
   width: 75px;
   overflow-x: hidden;
   white-space: nowrap;
   text-align: center;
+  font-size: .5rem;
+}
+
+.overlay {
+
+  text-align: center;
+
+  /* semi-transparent white */
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  gap: .6rem;
 }
 
 .text {
+  position: absolute;
+  bottom: 20px;
   width: 80%;
   left: 50%;
-  text-align: center;
-  font-size: .6rem !important;
-  color: black !important;
   transform: translateX(-50%);
-  bottom: 35px;
+  font-size: .6rem !important;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  padding-block: .5rem;
+  border-radius: .5rem;
 }
+
+.keywords {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding-bottom: .3rem;
+
+}
+
+.keyword {
+  width: 25px;
+
+}
+
+.keyword-container {
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+
+
+
 
 .cost {
   top: 5px;

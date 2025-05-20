@@ -1,30 +1,29 @@
+// useSocket.ts
 import { io, Socket } from 'socket.io-client';
+import { ref } from 'vue';
 
-export const BACKEND_URL = 'http://localhost:3000';
-//export const BACKEND_URL = 'https://fa33e7a2-31cf-46cc-9431-33ed4b5dfd5e-00-150zblrjpqd5m.worf.replit.dev/';
-//export const BACKEND_URL = 'https://c794-79-18-224-186.ngrok-free.app';
+export const BACKEND_URL = ref('http://localhost:');
 
+let socket: Socket | null = null;
 
-let socket: Socket;
-
-export const useSocket = () => {
+export const initSocket = () => {
     if (!socket) {
-        socket = io(BACKEND_URL.trim(), {
+        socket = io(BACKEND_URL.value.trim(), {
             transports: ['websocket']
         });
-
     }
+};
+
+export const useSocket = () => {
+    if (!socket) throw new Error('Socket not initialized. Call initSocket() first.');
 
     const on = (event: string, callback: (...args: any[]) => void) => {
-        console.log(event);
-        socket.on(event, callback);
+        socket!.on(event, callback);
     };
 
     const emit = (event: string, payload?: any) => {
-        socket.emit(event, payload);
+        socket!.emit(event, payload);
     };
-
-
 
     return {
         socket,

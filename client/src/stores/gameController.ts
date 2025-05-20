@@ -7,6 +7,7 @@ import { GameState, PlayerState, EventType } from 'shared/interfaces'
 import { useMultiplayer } from '@/composables/useMultiplayer'
 import { useSocket } from '@/composables/useSocket';
 import { useRouter } from 'vue-router';
+import { cardCanBePlayed } from '@shared/validations'
 const router = useRouter();
 
 
@@ -55,6 +56,16 @@ export const useGameController = defineStore('game', () => {
     }
 
     const playCard = (cardId: string) => {
+
+        if (!gameState.value || !myPlayerId.value) {
+            return
+        };
+
+        const validated = cardCanBePlayed(gameState.value.players[myPlayerId.value], cardId);
+        if (!validated.success) {
+            return validated;
+        }
+
         emitEvent('play-card', { cardId });
     };
 
@@ -97,7 +108,6 @@ export const useGameController = defineStore('game', () => {
             opponentPlayer.value.updateFromState(oppponentPlayerState.value);
         }
 
-        console.log(myPlayer.value);
     };
 
 
