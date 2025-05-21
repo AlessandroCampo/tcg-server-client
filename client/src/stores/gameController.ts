@@ -93,22 +93,30 @@ export const useGameController = defineStore('game', () => {
 
 
     const setGameState = (state: GameState) => {
-        gameState.value = state;
+        if (!gameState.value) {
+            return;
+        }
+        gameState.value.turnNumber = state.turnNumber;
+        gameState.value.turnPlayerId = state.turnPlayerId;
+        gameState.value.globalTurn = state.globalTurn;
 
         if (!myPlayerId.value || !opponentPlayerId.value) return;
 
-        myPlayerState.value = state.players[myPlayerId.value];
-        oppponentPlayerState.value = state.players[opponentPlayerId.value];
+        const myState = state.players[myPlayerId.value];
+        const oppState = state.players[opponentPlayerId.value];
+
+        myPlayerState.value = myState;
+        oppponentPlayerState.value = oppState;
 
         if (myPlayer.value) {
-            myPlayer.value.updateFromState(myPlayerState.value);
+            myPlayer.value.updateFromState(myState);
         }
 
         if (opponentPlayer.value) {
-            opponentPlayer.value.updateFromState(oppponentPlayerState.value);
+            opponentPlayer.value.updateFromState(oppState);
         }
-
     };
+
 
 
     return {

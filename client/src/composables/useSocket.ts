@@ -2,7 +2,7 @@
 import { io, Socket } from 'socket.io-client';
 import { ref } from 'vue';
 
-export const BACKEND_URL = ref('http://localhost:3000');
+export const BACKEND_URL = ref('https://8f9d-79-17-5-168.ngrok-free.app');
 
 let socket: Socket | null = null;
 

@@ -57,14 +57,48 @@ export class Player {
 
 
     updateFromState(state: PlayerState) {
-        this.deck = state.deck.map(c => new Card({ ...c, }));
-        this.hand = state.hand.map(c => new Card({ ...c }));
-        this.grave = state.graveyard.map(c => new Card({ ...c }));
-        this.board = state.board.map(c => new Card({ ...c, }));
+        this.patchZone(this.deck, state.deck);
+        this.patchZone(this.hand, state.hand);
+        this.patchZone(this.grave, state.graveyard);
+        this.patchZone(this.board, state.board);
+
         this.lifePoints = state.lifePoints;
         this.mana = state.mana;
         this.bloodThirst = state.bloodThirst;
         this.shield = state.shield;
+    }
+
+    // Patch a card zone in-place by instanceId
+    private patchZone(localZone: Card[], serverZone: Card[]) {
+        const serverMap = new Map(serverZone.map(c => [c.instanceId, c]));
+
+        // Remove any cards not in server state
+        for (let i = localZone.length - 1; i >= 0; i--) {
+            const card = localZone[i];
+            if (!serverMap.has(card.instanceId)) {
+                localZone.splice(i, 1);
+            }
+        }
+
+        // Update or insert cards, maintaining correct order
+        for (let i = 0; i < serverZone.length; i++) {
+            const serverCard = serverZone[i];
+            const index = localZone.findIndex(c => c.instanceId === serverCard.instanceId);
+
+            if (index !== -1) {
+                // Update existing card in place
+                Object.assign(localZone[index], serverCard);
+
+                // Reorder if necessary
+                if (index !== i) {
+                    const [card] = localZone.splice(index, 1);
+                    localZone.splice(i, 0, card);
+                }
+            } else {
+                // Insert new card
+                localZone.splice(i, 0, new Card({ ...serverCard }));
+            }
+        }
     }
 
 

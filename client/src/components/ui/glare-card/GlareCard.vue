@@ -36,24 +36,24 @@
 
 
             <!-- Mana Cost -->
-            <div class="stat cost" :class="getCostClass">
+            <div class="stat cost">
               {{ card.cost }}
             </div>
 
             <!-- Attack -->
-            <div class="stat atk" :class="getAttackClass">
+            <div class="stat atk">
               {{ card.attack }}
             </div>
 
             <!-- Defense -->
-            <div class="stat def" :class="getDefenseClass">
+            <div class="stat def">
               {{ card.defense }}
             </div>
 
 
 
 
-            <div class="text">
+            <div class="text text-black">
               <div class="mb-2  mx-auto px-2 keyword-container">
                 {{ card.keywords.join(',') }}
               </div>
@@ -250,6 +250,12 @@ function handlePointerLeave() {
   position: absolute;
   z-index: 100;
   font-weight: bold;
+
+
+}
+
+.stat {
+  color: white;
 }
 
 .card-name {

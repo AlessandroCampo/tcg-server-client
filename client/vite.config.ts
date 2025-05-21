@@ -13,7 +13,7 @@ export default defineConfig({
     allowedHosts: [
       'localhost',
       'your-machine-name',
-      'https://fc06-37-102-107-106.ngrok-free.app',
+      'https://2968-79-17-5-168.ngrok-free.app',
     ]
   },
   resolve: {
