@@ -3,122 +3,172 @@ import { Card } from "../../../shared/Card";
 import { Effect } from "../../../shared/Effect";
 import { EffectType } from "../../../shared/Effect";
 import { CardType, EventType, GameState, PlayerState } from "../../../shared/interfaces";
-import { draw, getPlayersFromState } from "../gameEngine";
+import { draw } from "../gameEngine";
+import { applyDirectDamage, getPlayersFromState, handleUnitDeath } from "../game/gameUtils";
 import { controlsAnotherMinion, controlsMinionWithNameFragment, isCardTapped } from "../../../shared/conditions";
+import red, { redEffects } from "./effects/red";
+import { gameRules } from "../../../shared/gameRules";
+import { blackEffects } from "./effects/black";
+import { useEffect } from "../game/effects/useEffect";
 
-const dealDamage = () => {
+const { activateEffect } = useEffect();
 
-}
 
 interface stats {
     attack: number,
     defense: number
 }
 
-export const drawCard = (player: PlayerState, amount: number) => {
+export const dealDamage = (target: Card, [player, opponent]: PlayerState[], amount: number = 1): { killedUnit: Card } | null => {
+    if (!target.defense) {
+        return null;
+    }
+    target.defense -= amount;
+    if (target.defense <= 0) {
+        handleUnitDeath(target, player, opponent, [target.instanceId], false);
+        return {
+            killedUnit: target
+        }
+    }
+    return null;
+}
+
+export const cardCanAttackAgain = (card: Card) => {
+    card.isActive = true;
+    card.isHorizontal = false;
+    card.attacksCounter = 0;
+
+}
+
+export const dealRandomDamageToOpponentUnit = (condition: (unit: any) => boolean, [player, opponent]: PlayerState[], activatorCard: Card, amount = 1) => {
+
+
+    const validTargets = opponent.board.filter(condition);
+    if (validTargets.length === 0) return;
+
+    const randomIdx = Math.floor(Math.random() * validTargets.length);
+    const randomTarget = validTargets[randomIdx];
+
+    dealDamage(randomTarget, [player, opponent], amount);
+
+    // Remove from graveyard and add to board
+
+}
+
+export const destroyRandomOppponentUnit = (condition: (unit: any) => boolean, [player, opponent]: PlayerState[], activatorCard: Card, amount = 1) => {
+
+
+    const validTargets = opponent.board.filter(condition);
+    if (validTargets.length === 0) return;
+
+    const randomIdx = Math.floor(Math.random() * validTargets.length);
+    const randomTarget = validTargets[randomIdx];
+
+    handleUnitDeath(randomTarget, player, opponent, [randomTarget.instanceId]);
+
+    // Remove from graveyard and add to board
+
+}
+
+
+export const inflictDamageAoe = ([player, opponent]: PlayerState[], activator: Card, amount = 1, includeSelf = false, includeOwnField = false): Card[] => {
+
+    const destroyedUnits: Card[] = [];
+
+    opponent.board.forEach(card => {
+        const damageResult = dealDamage(card, [player, opponent], amount);
+        if (damageResult?.killedUnit) {
+            destroyedUnits.push(damageResult.killedUnit);
+        }
+    })
+
+    console.log(destroyedUnits.map(el => el.name).join(','));
+
+    if (includeOwnField) {
+        player.board.forEach(card => {
+            const damageResult = dealDamage(card, [player, opponent], amount);
+            if (damageResult?.killedUnit) {
+                destroyedUnits.push(damageResult.killedUnit);
+            }
+        })
+
+    }
+
+    return destroyedUnits;
+
+}
+
+
+export const drawCard = (player: PlayerState, amount: number = 1) => {
+    console.log(player.hand.length, gameRules.MAX_HAND_SIZE);
+    if (player.hand.length >= gameRules.MAX_HAND_SIZE) return;
     const drawCount = Math.min(amount, player.deck.length);
     player.hand.push(...player.deck.splice(0, drawCount));
 }
 
-const dealDirectDamage = (targetPlayerState: PlayerState, amount: number) => {
-    targetPlayerState.lifePoints -= amount;
+export const playCardToBoard = (target: Card, player: PlayerState, opponent: PlayerState) => {
+    if (player.board.length >= gameRules.MAX_FIELD_SIZE) {
+        return;
+    }
+    player.board.push(target);
+    player.hand = player.hand.filter(card => card.instanceId != target.instanceId);
+    activateEffect(target, EffectType.ON_PLAY, [player, opponent]);
 }
 
-const boostStats = (card: Card, { attack, defense }: stats) => {
+
+export const dealDirectDamage = (targetPlayerState: PlayerState, attackingPlayerSate: PlayerState, amount: number) => {
+    applyDirectDamage(targetPlayerState, attackingPlayerSate, amount);
+    //targetPlayerState.lifePoints -= amount;
+}
+
+export const boostStats = (card: Card, { attack, defense }: stats) => {
     if (!card.attack || !card.defense) return;
     card.attack += attack;
     card.defense += defense;
 };
 
-
-
-const SlaveGoblinEffect = new Effect({
-
-    type: EffectType.ON_PLAY,
-    resolver: ([player, opponent]) => {
-
-        dealDirectDamage(opponent, 1);
+export const rebornRandom = (condition: (unit: any) => boolean, [player, opponent]: PlayerState[], activatorCard: Card): void => {
+    if (player.board.length >= gameRules.MAX_FIELD_SIZE) {
+        return;
     }
-});
+    const owner = [player, opponent].find(p => p.id == activatorCard.ownerId);
+    if (!owner) return;
 
-//DEAL 1 to a random enemy unit
-const fireBallEffect = new Effect({
+    const validTargets = owner.graveyard.filter(condition);
 
-    type: EffectType.ON_PLAY,
-    resolver: ([player, opponent]) => {
+    if (validTargets.length === 0) return;
 
-        dealDirectDamage(opponent, 2);
-    }
-});
+    const randomIdx = Math.floor(Math.random() * validTargets.length);
+    const reborned = validTargets[randomIdx];
 
-const GreedyGolemEffect = new Effect({
+    // Remove from graveyard and add to board
+    owner.graveyard = owner.graveyard.filter(unit => unit !== reborned);
+    owner.board.push(reborned);
+    activateEffect(reborned, EffectType.ON_PLAY, [player, opponent]);
+};
 
-    type: EffectType.ON_PLAY,
-    resolver: ([player, opponent]) => {
+export const destroyUnit = (target: Card, [player, opponent]: PlayerState[]) => {
 
-        drawCard(player, 1);
-    }
-});
-
-const DrunkardGoblinEffect = new Effect({
-
-    type: EffectType.ON_ATTACK,
-    resolver: ([player, opponent], card) => {
-        dealDirectDamage(opponent, 1);
-    },
-    condition: (playerStates, card) => {
-        if (!card?.defense || card?.defense >= 0) return true;
-        return false;
-    },
-});
-
-const ExploringGoblinEffect = new Effect({
-
-    type: EffectType.ON_PLAY,
-    resolver: ([player, opponent], card) => {
-        if (card) {
-            boostStats(card, { attack: 1, defense: 1 });
-        }
-    },
-    condition: (playerStates, card) => {
-        if (!playerStates || !card) return false;
-        const [player] = playerStates;
-
-        return controlsMinionWithNameFragment(player.board, 'Goblin', card);
-    }
-
-});
-const ForgeInitiateEffect = new Effect({
-
-    type: EffectType.ON_TAP,
-    targets: true,
-    validTargets: ([player, opponent], card) => {
-        return player.board.filter(unit => unit.type == CardType.MINION && unit.instanceId !== card?.instanceId);
-    },
-    resolver: ([player, opponent], card, target) => {
-
-        if (target) {
-            boostStats(target, { attack: 2, defense: 1 });
-        }
-    },
-    condition: (playerStates, card) => {
-
-        if (!playerStates || !card) return false;
-        const [player] = playerStates;
-        if (!isCardTapped(card)) return false;
-        return controlsAnotherMinion(player.board, card);
-    }
-
-});
+}
 
 
+export type CardEffectMap = {
+    default?: Effect[];
+    bt?: Effect[];
+};
+
+export function getActiveEffects(cardName: string, isBtActive: boolean): Effect[] {
+    const entry = cardEffects[cardName];
+    if (!entry) return [];
+
+    const btEffects = isBtActive ? entry.bt ?? [] : [];
+    const defaultEffects = entry.default ?? [];
+
+    return [...btEffects, ...defaultEffects];
+}
 
 
-export const cardEffects: Record<string, Effect[]> = {
-    'Goblin Slave': [SlaveGoblinEffect],
-    'Fireball': [fireBallEffect],
-    'Greedy Goblin': [GreedyGolemEffect],
-    'DrunkenGoblin': [DrunkardGoblinEffect],
-    'Goblin Scout': [ExploringGoblinEffect],
-    'Forge Initiate': [ForgeInitiateEffect]
+export const cardEffects: Record<string, CardEffectMap> = {
+    ...redEffects,
+    ...blackEffects
 };

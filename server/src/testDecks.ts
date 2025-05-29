@@ -1,27 +1,23 @@
 // server/testDecks.ts
 
 import { CardParams } from "../../shared/interfaces";
-import { cardTemplates, CardTemplateMap } from "./data/testCards";
+import { blackTemplates } from "./data/cards/blackCards";
+import { redTemplates } from "./data/cards/redCards";
+import { cardTemplates } from "./data/testCards";
+import { CardTemplateMap } from "../shared/interfaces";
+
+const redDeck = Object.values(redTemplates).map(card => ({
+    card,
+    quantity: 2
+}));
+const blackDeck = Object.values(blackTemplates).map(card => ({
+    card,
+    quantity: 2
+}));
+
 
 
 export const testDecks = [
-    [
-
-        { card: cardTemplates.GoblinSlave, quantity: 3 },
-        { card: cardTemplates.Fireball, quantity: 3 },
-        { card: cardTemplates.DrunkenGoblin, quantity: 3 },
-        { card: cardTemplates.GoblinScout, quantity: 3 },
-        { card: cardTemplates.GreedyGoblin, quantity: 3 },
-        { card: cardTemplates.ForgeInitiate, quantity: 12 },
-    ],
-    [
-
-
-        { card: cardTemplates.GoblinSlave, quantity: 3 },
-        { card: cardTemplates.Fireball, quantity: 3 },
-        { card: cardTemplates.DrunkenGoblin, quantity: 3 },
-        { card: cardTemplates.GoblinScout, quantity: 3 },
-        { card: cardTemplates.GreedyGoblin, quantity: 3 },
-        { card: cardTemplates.ForgeInitiate, quantity: 12 },
-    ]
+    redDeck,
+    blackDeck
 ];

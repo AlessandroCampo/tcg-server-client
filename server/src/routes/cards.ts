@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prismaClient';
-import type { CardParams } from '../../../shared/interfaces';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
+import { cardTemplates } from '../data/testCards';
+
 
 export const cardsRouter = Router();
 
@@ -32,25 +33,13 @@ const storage = multer.diskStorage({
 export const upload = multer({ storage });
 
 
+
+
 cardsRouter.get('/cards', async (_req: Request, res: Response): Promise<void> => {
     try {
-        // Fetch cards, include join‐table entries, and pull the related records
-        const cards = await prisma.card.findMany({
-            include: {
-                cardKeywords: {
-                    include: { keyword: true }
-                }
-            }
-        })
-
-        // Optionally, flatten the relations into plain arrays:
-        const result = cards.map(card => ({
-            ...card,
-            image_url: `${process.env.BASE_URL}/uploads/${card.id}.jpg`,
-            keywords: card.cardKeywords.map(key => key.keyword)
-        }))
-
-        res.json(result)
+        const allCards = Object.values(cardTemplates);
+        console.log('asked all cards');
+        res.json(allCards)
     } catch (err) {
         console.error('Fetch cards error', err)
         res.status(500).json({ error: 'Failed to fetch cards' })

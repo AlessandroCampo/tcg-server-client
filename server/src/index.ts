@@ -9,6 +9,7 @@ import { cardsRouter } from './routes/cards';
 import { keywordsRouter } from './routes/keywords';
 
 import { initializeSocket } from './socket';
+import { decklistRouter } from './routes/decklist';
 
 dotenv.config();
 
@@ -33,7 +34,10 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads
 app.use(cardsRouter);
 app.use('/keywords', keywordsRouter);
 // Multer setup
-
+app.use('/decklist', decklistRouter);
+app.use((req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+});
 
 // Socket.IO logic
 initializeSocket(io);

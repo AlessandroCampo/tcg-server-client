@@ -9,11 +9,20 @@ import {
     PlayerState,
     GameState,
 } from '../../shared/interfaces';
+import { prisma } from './prismaClient';
 
 import { initGameMethods } from './mutiplayer/gameMethods';
 import { sanitizeGameStateFor } from './mutiplayer/sanitizeGameState';
 
+type DecklistRow = {
+    id: string;
+    name: string;
+    player_id: string;
+    cards: any;
+};
+
 const waitingQueue: string[] = [];
+const playerSocketMap = new Map<string, string>();
 
 async function tryMatchmake(socket: Socket): Promise<string | undefined> {
     // Check if there are players waiting in the queue
@@ -42,26 +51,50 @@ async function launchGame(room: string, socket: Socket, io: Server) {
     const players = [a, b];
     const startingPlayer = players[diceRoll()];
 
-    // build and shuffle decks
-    const deckA = shuffle(fetchDeckData(testDecks[0], a));
-    const deckB = shuffle(fetchDeckData(testDecks[1], b));
+    async function loadDeck(playerId: string, socketId: string, testDeckIndex: number) {
+        const result = await prisma.$queryRaw<DecklistRow[]>`
+        SELECT * FROM decklists WHERE player_id = ${playerId} ORDER BY id ASC LIMIT 1
+    `;
 
+
+        const savedDeck = result[0]?.cards || testDecks[testDeckIndex];
+        return shuffle(fetchDeckData(savedDeck, socketId));
+    }
+
+
+    const playerAId = playerSocketMap.get(a) || a;
+    const playerBId = playerSocketMap.get(b) || b;
+
+    const [deckA, deckB] = await Promise.all([
+        loadDeck(playerAId, a, 0),
+        loadDeck(playerBId, b, 1)
+    ]);
 
     const initState: GameState = {
         players: {
             [a]: {
+                id: a,
                 deck: deckA,
                 hand: deckA.splice(0, gameRules.STARTING_HAND_SIZE),
                 board: [], graveyard: [],
                 lifePoints: gameRules.STARTING_LIFE,
-                mana: gameRules.STARTING_MANA, turnsTaken: 0
+                mana: gameRules.STARTING_MANA, turnsTaken: 0,
+                bloodThirst: false,
+                shield: true,
+                shieldBroken: false,
+                canReroll: true
             },
             [b]: {
+                id: b,
                 deck: deckB,
                 hand: deckB.splice(0, gameRules.STARTING_HAND_SIZE),
                 board: [], graveyard: [],
                 lifePoints: gameRules.STARTING_LIFE,
-                mana: gameRules.STARTING_MANA, turnsTaken: 0
+                mana: gameRules.STARTING_MANA, turnsTaken: 0,
+                bloodThirst: false,
+                shield: true,
+                shieldBroken: false,
+                canReroll: true
             }
         },
         turnPlayerId: startingPlayer,
@@ -95,6 +128,11 @@ export function initializeSocket(io: Server) {
         // register all game message handlers
         initGameMethods(socket, io);
 
+        socket.on('player-auth', ({ playerId }) => {
+            playerSocketMap.set(socket.id, playerId);
+            console.log(`Player ${playerId} mapped to socket ${socket.id}`);
+        });
+
         // Listen for the 'joinQueue' event to start matchmaking
         socket.on('joinQueue', async () => {
             console.log(`🕹️ Player ${socket.id} wants to join the queue`);
@@ -124,5 +162,16 @@ export function initializeSocket(io: Server) {
                 console.log(`❗ Player ${socket.id} was not found in the queue`);
             }
         });
+
+        socket.on('disconnect', () => {
+            console.log(`❌ Player disconnected: ${socket.id}`);
+
+            const idx = waitingQueue.indexOf(socket.id);
+            if (idx !== -1) {
+                waitingQueue.splice(idx, 1);
+                console.log(`🧹 Removed ${socket.id} from waiting queue due to disconnection`);
+            }
+        });
+
     });
 }

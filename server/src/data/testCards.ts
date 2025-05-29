@@ -1,8 +1,10 @@
-import { CardParams, CardType, Color, Keyword, SubType } from "../../../shared/interfaces";
+import { CardParams, CardType, Color, Keyword, SubType, CardTemplateMap } from "../../../shared/interfaces";
+import { blackTemplates } from "./cards/blackCards";
+import { redTemplates } from "./cards/redCards";
 
-export type CardTemplateMap = {
-    [key: string]: CardParams;
-};
+
+
+
 
 export const cardTemplates: CardTemplateMap = {
     BraveMouse: {
@@ -15,7 +17,7 @@ export const cardTemplates: CardTemplateMap = {
         type: CardType.MINION,
         subtype: null,
         keywords: [],
-        effectText: ""
+        effectText: "",
     },
     AngryMonkey: {
         templateId: "2",
@@ -51,7 +53,8 @@ export const cardTemplates: CardTemplateMap = {
         type: CardType.MINION,
         subtype: null,
         keywords: [Keyword.RUSH],
-        effectText: "On attack: If this card survives, inflict 1 damage to the enemy base"
+        effectText: "On attack: If this card survives, inflict 1 damage to the enemy base",
+        btText: "On death: draw 1 card"
     },
     RuinsOrc: {
         templateId: "5",
@@ -77,42 +80,6 @@ export const cardTemplates: CardTemplateMap = {
         keywords: [],
         effectText: ""
     },
-    GoblinSlave: {
-        templateId: "7",
-        name: "Goblin Slave",
-        attack: 1,
-        defense: 1,
-        cost: 1,
-        color: Color.RED,
-        type: CardType.MINION,
-        subtype: null,
-        keywords: [],
-        effectText: "On play: inflict 1 damage to your opponent's base"
-    },
-    GreedyGoblin: {
-        templateId: "8",
-        name: "Greedy Goblin",
-        attack: 1,
-        defense: 2,
-        cost: 1,
-        color: Color.RED,
-        type: CardType.MINION,
-        subtype: null,
-        keywords: [],
-        effectText: "On play: Draw 1 card"
-    },
-    Fireball: {
-        templateId: "9",
-        name: "Fireball",
-        attack: null,
-        defense: null,
-        cost: 3,
-        color: Color.RED,
-        type: CardType.SPELL,
-        subtype: null,
-        keywords: [],
-        effectText: "Inflict 2 damage to the enemy base"
-    },
     CleverSpider: {
         templateId: "10",
         name: "Clever Spider",
@@ -124,18 +91,6 @@ export const cardTemplates: CardTemplateMap = {
         subtype: null,
         keywords: [],
         effectText: ""
-    },
-    GoblinScout: {
-        templateId: "11",
-        name: "Goblin Scout",
-        attack: 1,
-        defense: 3,
-        cost: 1,
-        color: Color.RED,
-        type: CardType.MINION,
-        subtype: null,
-        keywords: [],
-        effectText: "On Play: If you control another Goblin, gains +1/+1"
     },
     LineageHeir: {
         templateId: "12",
@@ -161,16 +116,6 @@ export const cardTemplates: CardTemplateMap = {
         keywords: [],
         effectText: "On play: silence 1 target enemy unit"
     },
-    ForgeInitiate: {
-        templateId: "14",
-        name: "Forge Initiate",
-        attack: 1,
-        defense: 1,
-        cost: 2,
-        color: Color.RED,
-        type: CardType.MINION,
-        subtype: null,
-        keywords: [],
-        effectText: "Tap: give +2/+1 to target unit"
-    }
+    ...redTemplates,
+    ...blackTemplates
 };

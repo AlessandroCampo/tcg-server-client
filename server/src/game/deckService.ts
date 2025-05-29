@@ -1,12 +1,42 @@
 import { prisma } from '../prismaClient';
-import { CardParams } from '../../../shared/interfaces';
+import { CardParams, FullCardParams } from '../../../shared/interfaces';
 import { v4 as uuidv4 } from 'uuid';
 import { testDecks } from '../testDecks';
 import { Keyword } from 'src/generated/prisma';
-import { Card as dbCard } from 'src/generated/prisma';
-import { Card } from '@shared/Card';
-import { cardEffects } from '../data/cardEffects';
+import { Card } from '../../../shared/Card';
+import { cardEffects, getActiveEffects } from '../data/cardEffects';
 import { EffectType } from '../../../shared/Effect';
+
+
+export const getBaseFromTemplate = (card: CardParams, playerId?: string) => {
+    const effects = getActiveEffects(card.name, false);
+    const base: Omit<FullCardParams, 'instanceId'> = {
+        templateId: card.templateId,
+        name: card.name,
+        image_url: `${process.env.BASE_URL}/uploads/${card.templateId}.jpg`,
+        attack: card.attack,
+        originalAttack: card.attack,
+        defense: card.defense,
+        originalDefense: card.defense,
+        cost: card.cost,
+        originalCost: card.cost,
+        color: card.color as any,
+        type: card.type as any,
+        subtype: card.subtype as any,
+        keywords: card.keywords,
+        originalKeywords: card.keywords,
+        isFoil: false,
+        isActive: true,
+        effectText: card.effectText ?? '',
+        btText: card.btText ?? '',
+
+        isHorizontal: false,
+        effectTypes: effects.map(eff => eff.type as EffectType),
+        boostedByMana: 0
+    };
+
+    return base;
+}
 
 
 export function fetchDeckData(
@@ -17,41 +47,20 @@ export function fetchDeckData(
 
     const fullDeck: Card[] = [];
 
-
-
     for (const { card, quantity } of deckList) {
 
-        const effects = cardEffects[card.name] ?? [];
+        const base = getBaseFromTemplate(card);
 
-        const base: Omit<Card, 'instanceId'> = {
-            templateId: card.templateId,
-            name: card.name,
-            image_url: `${process.env.BASE_URL}/uploads/${card.templateId}.jpg`,
-            attack: card.attack,
-            originalAttack: card.attack,
 
-            defense: card.defense,
-            originalDefense: card.defense,
-            cost: card.cost,
-            originalCost: card.cost,
-            color: card.color as any,
-            type: card.type as any,
-            subtype: card.subtype as any,
-            keywords: card.keywords,
-            isFoil: false,
-            isActive: true,
-            ownerId: playerId,
-            effectText: card.effectText ?? '',
-            isHorizontal: false,
-            effectTypes: effects.map(eff => eff.type as EffectType)
-        };
 
         for (let i = 0; i < quantity; i++) {
-            fullDeck.push({
+            fullDeck.push(new Card({
                 instanceId: uuidv4(),
+                ownerId: playerId,
                 ...base
-            });
+            }));
         }
+
     }
 
     return fullDeck;

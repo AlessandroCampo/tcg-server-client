@@ -8,13 +8,13 @@ import {
     PassTurnPayload,
     DirectAttackPayload,
     DrawPayload,
-    BasePayload,
     MinionAttackPayload,
     ChangePositionPayload,
     ManaBoostPayload,
-    TargetSelectionPayload
+    TargetSelectionPayload,
+    RerollPayload
 } from '../../../shared/interfaces';
-import { getPlayersFromState } from '../gameEngine';
+import { getPlayersFromState } from '../game/gameUtils';
 
 /**
  * Only the keys of GameSession that map to handler methods
@@ -38,20 +38,19 @@ function broadcastEvent(
 ) {
     for (const viewerId of Object.keys(state.players)) {
 
-
+        const event = {
+            type: eventType,
+            playerId,
+            ...extra
+        };
 
         io.to(viewerId).emit('game-event', {
             state: sanitizeGameStateFor(viewerId, state),
-            event: {
-                type: eventType,
-                playerId,
-                ...extra
-            }
+            event
         });
 
         const [player, opponent] = getPlayersFromState(state, viewerId);
         if (opponent.lifePoints == 0) {
-            console.log('game-over');
             io.to(room).emit('game-over', {
                 winnerId: viewerId
             })
@@ -78,8 +77,12 @@ function registerHandler<
         console.log(`➡️ ${message} from ${socket.id}`);
 
         const session = getSession(payload.room);
-        console.log(session, payload.room);
         if (!session) return;
+
+
+        if (session.state.turnPlayerId != payload.playerId) {
+            return { success: false, reason: 'Not your turn' };
+        }
 
         if (session.pendingRequest && eventType !== EventType.TARGET_SELECTION) {
             console.warn(`${message} failed: waiting for pending request`);
@@ -100,7 +103,9 @@ function registerHandler<
             extra.waitForClient = successResult.waitForClient;
             session.pendingRequest = successResult.waitForClient;
         }
-        broadcastEvent(io, payload.room, eventType, payload.playerId, session.state, extra);
+
+        const finalEventType = (successResult as any).eventType ?? eventType;
+        broadcastEvent(io, payload.room, finalEventType, payload.playerId, session.state, extra);
     });
 }
 
@@ -115,7 +120,7 @@ export function initGameMethods(socket: Socket, io: Server) {
         'applyPlay',
         EventType.CARD_PLAYED,
 
-        res => ({ card: res.card })
+        res => ({ card: res.card, sideEvents: res.sideEvents || [] })
     );
 
     registerHandler<PassTurnPayload, 'applyPass', ReturnType<GameSession['applyPass']>>(
@@ -132,7 +137,15 @@ export function initGameMethods(socket: Socket, io: Server) {
         'direct-attack',
         'applyDirectAttack',
         EventType.DIRECT_ATTACK,
-        res => ({ damage: res.damage, card: res.card })
+        res => ({ damage: res.damage, card: res.attacker })
+    );
+    registerHandler<MinionAttackPayload, 'applyMinionAttack', ReturnType<GameSession['applyMinionAttack']>>(
+        socket,
+        io,
+        'minion-attack',
+        'applyMinionAttack',
+        EventType.APPLY_MINION_ATTACK,
+        res => ({ damage: res.destroyedMinionIds, attacker: res.attacker, defender: res.defender })
     );
 
     registerHandler<DrawPayload, 'applyDraw', ReturnType<GameSession['applyDraw']>>(
@@ -143,13 +156,7 @@ export function initGameMethods(socket: Socket, io: Server) {
         EventType.CARD_DRAWN
     );
 
-    registerHandler<MinionAttackPayload, 'applyMinionAttack', ReturnType<GameSession['applyMinionAttack']>>(
-        socket,
-        io,
-        'minion-attack',
-        'applyMinionAttack',
-        EventType.CARD_DRAWN
-    );
+
     registerHandler<ChangePositionPayload, 'applyChangePosition', ReturnType<GameSession['applyChangePosition']>>(
         socket,
         io,
@@ -164,11 +171,20 @@ export function initGameMethods(socket: Socket, io: Server) {
         'applyManaBoost',
         EventType.MANA_BOOST
     );
+    registerHandler<RerollPayload, 'applyReroll', ReturnType<GameSession['applyReroll']>>(
+        socket,
+        io,
+        'reroll',
+        'applyReroll',
+        EventType.REROLL,
+        res => ({ rerolledCardId: res.rerolledCardId })
+    );
     registerHandler<TargetSelectionPayload, 'applyTargetSelection', ReturnType<GameSession['applyTargetSelection']>>(
         socket,
         io,
         'select-target',
         'applyTargetSelection',
-        EventType.TARGET_SELECTION
+        EventType.TARGET_SELECTION,
+        res => ({ sideEvents: res.sideEvents || [] })
     );
 }

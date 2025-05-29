@@ -1,5 +1,5 @@
 import { GameState, PlayerState } from "@shared/interfaces";
-import { Card } from "@shared/Card";
+import { Card } from "../../../shared/Card";
 
 export function sanitizeGameStateFor(
     viewerId: string,
@@ -14,14 +14,12 @@ export function sanitizeGameStateFor(
     ][]) {
         if (pid !== viewerId) {
             // only hide the opponent’s hand
-            pstate.hand = pstate.hand.map((card: Card) => ({
-                // keep IDs so you can still reference card–e.g. for debugger
+            pstate.hand = pstate.hand.map((card: Card) => new Card({
                 templateId: card.templateId,
                 instanceId: card.instanceId,
                 ownerId: pid,
                 isActive: true,
 
-                // everything else hidden or zeroed
                 name: 'HIDDEN',
                 image_url: '',
                 attack: 0,
@@ -30,23 +28,22 @@ export function sanitizeGameStateFor(
                 originalAttack: 0,
                 originalCost: 0,
                 originalDefense: 0,
+                boostedByMana: 0,
 
-                // you could also use a special “hidden” enum value
                 color: 'HIDDEN' as any,
                 type: 'HIDDEN' as any,
                 subtype: 'HIDDEN' as any,
 
-                // preserve optional flags (or force to false)
                 isFoil: false,
-                isPlayerControlled: false,
                 isHorizontal: false,
 
-                // strip out keywords/effects
                 keywords: [],
+                originalKeywords: [],
                 effectText: '',
-                effectName: '',
+                btText: '',
                 effectTypes: [],
             }));
+
         }
     }
 
